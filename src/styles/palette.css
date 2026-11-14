@@ -54,11 +54,6 @@ html .palette-tag:hover, html .accent-button:hover {
 .microsoft-story-tip a { pointer-events: auto; }
 .microsoft-story-tip a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .certificate-image-trigger:focus-visible { outline: 2px solid #111920; outline-offset: 5px; }
-@media (max-width: 767px) {
-  .credential-description > p,
-  .credential-description:not(:has(.credential-story)) { display: none; }
-  .credential-story { margin-top: 0; }
-}
 @media (min-width: 768px) { .company-logo { left: auto; right: -16px; } }
 @media (min-width: 768px) {
   .credential-list { gap: 32px; }

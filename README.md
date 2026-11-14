@@ -6,6 +6,11 @@ waiting for construction. The native pointer, reduced-motion support, Microsoft
 story link, CV and image previews remain available. Historical animation modules
 are retained but are not imported by the active page.
 
+Stage 2 restores native wheel/touch scrolling at every speed. Scrolling no longer
+reverses direction, displays "Slow Down" interruptions, or automatically collapses
+and repositions cards. Project and credential descriptions are readable on mobile.
+The optional visit-local score still works, without taking control of navigation.
+
 Run `npm run dev -- --host 127.0.0.1 --port 8080` and open
 http://127.0.0.1:8080/main/ . Publishing remains a separate action.
 

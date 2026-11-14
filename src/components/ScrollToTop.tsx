@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, useSyncExternalStore } from "react";
 import { ArrowUpRight, X } from "lucide-react";
 import { getExploration, subscribeExploration } from "@/lib/exploration";
 import { profileContent } from "@/data/profileContent";
+import { useAttentionJourney } from "@/hooks/useAttentionJourney";
 import "@/styles/score-popup.css";
 
 const scoreSnapshot = () => {
@@ -11,6 +12,7 @@ const scoreSnapshot = () => {
 
 /** An optional visit-local score card. The score's underlying evidence stays unchanged. */
 export default function ScrollToTop() {
+  useAttentionJourney();
   const snapshot = useSyncExternalStore(subscribeExploration, scoreSnapshot, scoreSnapshot);
   const [percentage, count, total] = snapshot.split("/").map(Number);
   const [visible, setVisible] = useState(false), [open, setOpen] = useState(false);

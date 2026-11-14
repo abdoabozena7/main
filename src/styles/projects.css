@@ -1,6 +1,6 @@
 /* User-requested denser media layout: natural cards, larger screenshots, no reserved blank rows. */
 .project-grid { align-items: start; }
-.project-card { min-width: 0; min-height: 0; }
+.project-card { min-width: 0; min-height: 0; scroll-margin-top: 96px; }
 html .project-card:hover { box-shadow: 7px 7px 0 var(--accent, var(--accent-teal)); }
 .project-copy { flex-shrink: 0; }
 .project-media {
@@ -35,7 +35,6 @@ html .project-card:hover { box-shadow: 7px 7px 0 var(--accent, var(--accent-teal
 }
 .project-flow-media { background: color-mix(in srgb, var(--accent-cream) 30%, white); }
 @media (max-width: 767px) {
-  .project-description { display: none; }
   html .project-card:hover { box-shadow: none; }
 }
 @media (min-width: 768px) {

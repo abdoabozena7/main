@@ -10,7 +10,6 @@ import ContactSection from "@/components/ContactSection";
 import ScrollToTop from "@/components/ScrollToTop";
 import Terminal from "@/components/Terminal";
 import Finale from "@/components/Finale";
-import AdaptiveBrowsing from "@/components/AdaptiveBrowsing";
 import "@/styles/palette.css";
 
 const Index = () => {
@@ -45,7 +44,6 @@ const Index = () => {
       <ProjectsSection />
       <ContactSection />
       <Finale />
-      <AdaptiveBrowsing />
     </div>
   );
 };
