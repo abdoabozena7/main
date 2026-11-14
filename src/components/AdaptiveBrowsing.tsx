@@ -1,9 +1,7 @@
-import { useRef } from "react";
 import { createPortal } from "react-dom";
 import { useAdaptiveBrowsing } from "@/hooks/useAdaptiveBrowsing";
 import { useAttentionJourney } from "@/hooks/useAttentionJourney";
 import { useFastScrollReturn } from "@/hooks/useFastScrollReturn";
-import AgentPointer from "./AgentPointer";
 import "@/styles/adaptive.css";
 import "@/styles/section-return.css";
 
@@ -19,8 +17,7 @@ const returnMessages = [
 const returnVariants = ["ticket", "terminal", "note", "editorial", "layers", "glitch"];
 
 export default function AdaptiveBrowsing() {
-  const editor = useRef<HTMLDivElement>(null);
-  useAdaptiveBrowsing(editor);
+  useAdaptiveBrowsing();
   const cue = useFastScrollReturn();
   const variant = returnVariants[Math.max(0, cue.activation - 1) % returnVariants.length];
   const [title, subtitle] = returnMessages[Math.max(0, cue.activation - 1) % returnMessages.length];
@@ -34,9 +31,5 @@ export default function AdaptiveBrowsing() {
         <div role="status" aria-atomic="true" className="sr-only">{cue.visible ? `Slow Down. ${title} ${subtitle}` : ""}</div>
       </div>, document.body,
     )}
-    <div ref={editor} data-scan-agent aria-hidden="true">
-      <svg className="scan-trails">{[0, 1, 2].map(i => <path key={i} data-scan-trail={i} fill="none" stroke={i === 1 ? "#2bbaa5" : i === 2 ? "#f96635" : "#f9a822"} />)}</svg>
-      {[0, 1, 2].map(i => <div key={i} data-scan-editor={i} className="scan-agent" style={{ "--agent-color": i === 1 ? "#2bbaa5" : i === 2 ? "#f96635" : "#f9a822" } as React.CSSProperties}><AgentPointer /><i className="scan-grip" /><span /></div>)}
-    </div>
   </>;
 }

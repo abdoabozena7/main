@@ -1,4 +1,4 @@
-import { useLayoutEffect, type RefObject } from "react";
+import { useLayoutEffect } from "react";
 import { compensateScroll, getScrollIntent, requestDetailedView, subscribeScrollIntent } from "@/lib/scrollIntent";
 
 type Box = { el: HTMLElement; height: number; width: number; title: HTMLElement; media?: HTMLElement; actions?: HTMLElement; mediaX: number; mediaY: number; mediaW: number; mediaH: number; actionsY: number; details: HTMLElement[]; kind: string; titleSize: number; compactHeight: number; brand?: HTMLElement; logo?: HTMLElement; role?: HTMLElement; roleX: number; roleY: number; roleSize: number; summaryTitleSize: number; summaryTitleHeight: number; summaryMediaW: number; summaryMediaH: number; copy?: HTMLElement; copyW: number; copyTargetW: number; lift: number; paddingTop: number; frozen: boolean; badge?: HTMLElement; ribbon?: HTMLElement; toggle?: HTMLElement };
@@ -6,14 +6,12 @@ type Anchor = { el: HTMLElement; edge: "top" | "bottom"; y: number; lastScroll: 
 type ProjectSummary = { tags: HTMLElement; tagX: number; tagY: number; tagW: number; tagTargetY: number; mediaTargetY: number };
 
 /** One site-wide pace transition; section boundaries never reset its progress. */
-export function useAdaptiveBrowsing(editorRef: RefObject<HTMLDivElement>) {
+export function useAdaptiveBrowsing() {
   useLayoutEffect(() => {
     const groups = [...document.querySelectorAll<HTMLElement>("[data-scan-group]")];
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const coarse = matchMedia("(pointer: coarse)");
     const narrow = matchMedia("(max-width: 767px)");
-    const editors = [...(editorRef.current?.querySelectorAll<HTMLElement>("[data-scan-editor]") || [])];
-    const trails = [...(editorRef.current?.querySelectorAll<SVGPathElement>("[data-scan-trail]") || [])];
     const original = new Map<HTMLElement, string | null>();
     let boxes: (Box & { projectSummary?: ProjectSummary })[] = [], anchor: Anchor | null = null, progress = 0, goal = 0, frame = 0, tickAt = 0;
     let pointerHeld = false, touching = false, overflowAnchor = "", cachedWidth: number | undefined;
@@ -228,11 +226,7 @@ export function useAdaptiveBrowsing(editorRef: RefObject<HTMLDivElement>) {
       if (!pinned) compensate();
       paintedProgress = progress;
       }
-      // Fast summaries have no pretend workers. The real scene director resumes
-      // typing and asset placement after natural detail restoration.
-      [...editors, ...trails].forEach(el => { el.style.opacity = "0"; });
     };
-    const hideEditors = () => [...editors, ...trails].forEach(e => { e.style.opacity = "0"; });
     const animate = (now: number) => {
       frame = 0; const dt = Math.min(40, now - tickAt); tickAt = now;
       if (!goal && mobileMoving()) return;
@@ -240,7 +234,6 @@ export function useAdaptiveBrowsing(editorRef: RefObject<HTMLDivElement>) {
       paint();
       if (progress !== goal) frame = requestAnimationFrame(animate);
       else {
-        hideEditors();
         if (!goal) { restore(); compensate(); }
         window.dispatchEvent(new Event("portfolio:layout-settled"));
       }
@@ -256,7 +249,7 @@ export function useAdaptiveBrowsing(editorRef: RefObject<HTMLDivElement>) {
       window.dispatchEvent(new Event("portfolio:layout-start"));
       document.documentElement.dataset.browsing = next ? "scan" : "detail";
       cancelAnimationFrame(frame); frame = 0;
-      if (instant || reduced.matches || (!decorative() && next === 1)) { progress = next; paint(); hideEditors(); if (!next) { restore(); compensate(); } window.dispatchEvent(new Event("portfolio:layout-settled")); return; }
+      if (instant || reduced.matches || (!decorative() && next === 1)) { progress = next; paint(); if (!next) { restore(); compensate(); } window.dispatchEvent(new Event("portfolio:layout-settled")); return; }
       tickAt = performance.now(); frame = requestAnimationFrame(animate);
     };
     const onIntent = () => {
@@ -312,7 +305,7 @@ export function useAdaptiveBrowsing(editorRef: RefObject<HTMLDivElement>) {
     reduced.addEventListener("change", onJump);
     window.addEventListener("portfolio:fast-return-start", onJump);
     return () => {
-      unsubscribe(); cancelAnimationFrame(frame); clearTimeout(activationTimer); if (boxes.length) restore(); hideEditors();
+      unsubscribe(); cancelAnimationFrame(frame); clearTimeout(activationTimer); if (boxes.length) restore();
       document.removeEventListener("focusin", onFocus); document.removeEventListener("click", onClick, true);
       document.removeEventListener("pointerdown", onPointerDown); document.removeEventListener("pointerup", onPointerUp); document.removeEventListener("pointercancel", onPointerCancel);
       document.removeEventListener("touchend", onTouchEnd); document.removeEventListener("touchcancel", onTouchEnd);
@@ -322,5 +315,5 @@ export function useAdaptiveBrowsing(editorRef: RefObject<HTMLDivElement>) {
       reduced.removeEventListener("change", onJump);
       window.removeEventListener("portfolio:fast-return-start", onJump);
     };
-  }, [editorRef]);
+  }, []);
 }

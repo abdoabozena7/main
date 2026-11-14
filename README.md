@@ -1,4 +1,20 @@
-Latest local motion revision: the second reference video was decoded into773pictures and reviewed in chronological frame sheets. Lower-page agents now travel to measured work sites, grip/type/place/align, then release, in document coordinates that stay attached during scroll. Layout/hero/mobile policies and immediate scroll-command translation are preserved. See REFERENCE_V2_PLAN.md. npm run test:reference-motion and test:reference-layout exercise current motion and four-size baseline checks. This local revision is not deployed.
+# Current local lightweight portfolio
+
+Stage 1 removes the autonomous hero/lower-page agent layers and animated custom
+cursor from the live route. Text and controls render immediately instead of
+waiting for construction. The native pointer, reduced-motion support, Microsoft
+story link, CV and image previews remain available. Historical animation modules
+are retained but are not imported by the active page.
+
+Run `npm run dev -- --host 127.0.0.1 --port 8080` and open
+http://127.0.0.1:8080/main/ . Publishing remains a separate action.
+
+The motion/browsing experiments and acceptance scripts documented below describe
+older revisions, not the current lightweight experience.
+
+---
+
+Latest historical motion revision: the second reference video was decoded into773pictures and reviewed in chronological frame sheets. Lower-page agents travel to measured work sites, grip/type/place/align, then release, in document coordinates that stay attached during scroll. See REFERENCE_V2_PLAN.md. This revision is not deployed.
 
 Current LOCAL revision: strong downward wheel/touch commands translate UP immediately, ordinary commands move DOWN. There is no section/exposure/progress prerequisite. Touch is handled from its first vertical move with proportional displacement and bounded release inertia. See SCROLL_COMMAND_PLAN.md. npm run test:scroll-command (also test:fast-return) runs current acceptance. Published64574cf remains unchanged; older behavior described below is historical.
 

@@ -8,7 +8,6 @@ export default function MicrosoftHeadline() {
   const [engaged, setEngaged] = useState(false);
   const [autoReady, setAutoReady] = useState(false);
   const [dismissed, setDismissed] = useState(false);
-  const [constructed, setConstructed] = useState(false);
   const tip = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(true);
   const positionTip = useRef<(() => void) | null>(null);
@@ -61,13 +60,7 @@ export default function MicrosoftHeadline() {
     const ready = window.setTimeout(() => setAutoReady(true), 1400);
     return () => clearTimeout(ready);
   }, []);
-  useEffect(() => {
-    const node = badge.current; if (!node) return;
-    const update = () => setConstructed(node.dataset.constructed === "true" && !node.querySelector("[data-building]"));
-    const observer = new MutationObserver(update); observer.observe(node, { attributes: true, subtree: true, attributeFilter: ["data-constructed"] }); update();
-    return () => observer.disconnect();
-  }, []);
-  const showTip = visible && !dismissed && (engaged || (autoReady && constructed));
+  const showTip = visible && !dismissed && (engaged || autoReady);
   useLayoutEffect(() => { if (showTip) positionTip.current?.(); }, [showTip]);
   return (
     <>
