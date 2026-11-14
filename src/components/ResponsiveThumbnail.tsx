@@ -32,7 +32,7 @@ export default function ResponsiveThumbnail({ path, sizes, onError, ...props }: 
 
   return (
     <picture style={{ display: "contents" }}>
-      {webp && <source media="(max-width: 767px)" type="image/webp" srcSet={webp} sizes={sizes} />}
+      {webp && <source type="image/webp" srcSet={webp} sizes={sizes} />}
       <img
         src={source}
         loading="lazy"

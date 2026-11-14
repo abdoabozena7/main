@@ -14,7 +14,7 @@ const AnimatedAvatar = () => {
         {!imageError ? (
           <ResponsiveThumbnail
             path={profileContent.avatar}
-            sizes="216px"
+            sizes="(min-width: 768px) 252px, 188px"
             alt="Abdelrahman Abozena"
             className="w-full h-full object-cover object-top grayscale"
             onError={() => setImageError(true)}

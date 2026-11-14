@@ -1,4 +1,8 @@
-# Current local lightweight portfolio
+# Current lightweight portfolio
+
+Live URL: https://abdoabozena7.github.io/main/
+GitHub Pages publishes pushes to `main` through
+[Deploy portfolio](.github/workflows/pages.yml).
 
 Stage 1 removes the autonomous hero/lower-page agent layers and animated custom
 cursor from the live route. Text and controls render immediately instead of
@@ -10,6 +14,18 @@ Stage 2 restores native wheel/touch scrolling at every speed. Scrolling no longe
 reverses direction, displays "Slow Down" interruptions, or automatically collapses
 and repositions cards. Project and credential descriptions are readable on mobile.
 The optional visit-local score still works, without taking control of navigation.
+
+Stage 3 serves the existing responsive WebP thumbnails on desktop as well as
+mobile, sized for the actual cards, certificates and portrait. Below-fold images
+remain lazy-loaded; zoom still opens the original full-resolution file, with
+the original image retained as the thumbnail fallback.
+
+Current checks: `npm test`, `npm run build`, and `npm run test:lightweight`
+(with a local server running). The browser check defaults to
+http://127.0.0.1:8080/main/ ; set `PORTFOLIO_URL` to use another local preview.
+It covers desktop/tablet/mobile, native wheel/swipe direction, stable cards,
+responsive media, CV download, previews/focus recovery, score, terminal and deep
+links. Screenshots and the report go to ignored `output/playwright/lightweight-browsing`.
 
 Run `npm run dev -- --host 127.0.0.1 --port 8080` and open
 http://127.0.0.1:8080/main/ . Publishing remains a separate action.

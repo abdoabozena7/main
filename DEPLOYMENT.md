@@ -1,3 +1,30 @@
+# Lightweight portfolio release - 14 November 2026
+
+Public URL: https://abdoabozena7.github.io/main/
+
+The current deployment uses the [Deploy portfolio workflow](.github/workflows/pages.yml):
+a normal push to `origin/main` builds with Node 22 and `npm ci`, then publishes
+the `dist` artifact through GitHub Pages. Do not use the historical `gh-pages`
+branch instructions below.
+
+The release is split into three reversible commits:
+
+1. Remove moving agents and the animated pointer, preserving immediate content,
+   reduced motion, story links and initial fragment navigation.
+2. Restore native scrolling and stable cards, with readable mobile descriptions.
+3. Use correctly sized WebP thumbnails while preserving original zoom images.
+
+Revert these commits in reverse order when rolling back dependent changes.
+Pre-publication validation includes 31 unit tests, the application TypeScript
+check and a production build. `npm run test:lightweight` exercises the current
+desktop/tablet/mobile journey; set `PORTFOLIO_URL` to the URL being verified.
+After publication, confirm the workflow succeeded for the pushed commit and
+compare the public JS/CSS assets with the tested build.
+
+The earlier release records below are historical and use the old repository URL.
+
+---
+
 # Verified discovery-score and complete-hero release - 2 November2026
 
 Live: https://abdoabozena7.github.io/Clean_Portofoio/

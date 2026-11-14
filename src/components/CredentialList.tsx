@@ -9,7 +9,6 @@ type CredentialListProps = {
   group: "education" | "honors";
 };
 
-/** Real copy and media stay mounted for the scroll-adaptive scan presentation. */
 const CredentialList = ({ items, group }: CredentialListProps) => (
   <div className="credential-list" data-scan-group={group}>
     {items.map((item, index) => (
@@ -37,7 +36,7 @@ const CredentialList = ({ items, group }: CredentialListProps) => (
               <button data-construction="asset" data-scan-detail className="certificate-image-trigger" aria-label={`Zoom in ${item.degree} ${item.achievement ? "photo" : "certificate"}`}>
                 <ResponsiveThumbnail
                   path={item.image}
-                  sizes="(min-width: 640px) calc(100vw - 86px), calc(100vw - 78px)"
+                  sizes="(min-width: 768px) 188px, (min-width: 640px) calc(100vw - 86px), calc(100vw - 78px)"
                   alt={item.imageAlt}
                   className="certificate-thumb"
                   width={item.imageWidth}

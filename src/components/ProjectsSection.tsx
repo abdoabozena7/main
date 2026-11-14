@@ -54,7 +54,7 @@ const ProjectsSection = () => {
               <div className="project-media" data-construction="asset">
                 <DialogTrigger asChild>
                   <button className="project-image-trigger" onClick={event => openers.current.set(project.id, event.currentTarget)} onPointerDown={event => event.currentTarget.setPointerCapture(event.pointerId)} aria-label={`Zoom in on ${project.title} screenshot`}>
-                    <ResponsiveThumbnail path={project.image} sizes="calc(100vw - 92px)" alt={project.imageAlt} width="1920" height="1080" />
+                    <ResponsiveThumbnail path={project.image} sizes="(min-width: 896px) 368px, (min-width: 768px) calc((100vw - 160px) / 2), calc(100vw - 92px)" alt={project.imageAlt} width="1920" height="1080" />
                   </button>
                 </DialogTrigger>
               </div>
