@@ -19,6 +19,7 @@ export function useFluidScroll(): WheelMotion {
     let wheelActive = false, held = false, dirty = true;
     let releaseTimer: ReturnType<typeof setTimeout> | undefined;
     let pressX = 0, pressY = 0;
+    let viewportWidth = innerWidth;
     let scroll: FluidState = { position: scrollY, velocity: 0 };
     let pull: FluidState = { position: 0, velocity: 0 };
     const blocked = () => document.hidden || reduced.matches ||
@@ -28,8 +29,8 @@ export function useFluidScroll(): WheelMotion {
       section.removeAttribute("data-fluid-surface");
       properties.forEach(property => section.style.removeProperty(property));
       // The restored hover rule must not animate the final reset a second time.
-      for (const animation of section.getAnimations()) {
-        if (animation instanceof CSSTransition && animation.transitionProperty === "transform") animation.cancel();
+      for (const animation of section.getAnimations?.() ?? []) {
+        if ("transitionProperty" in animation && animation.transitionProperty === "transform") animation.cancel();
       }
     };
     const reset = () => {
@@ -69,7 +70,7 @@ export function useFluidScroll(): WheelMotion {
         window.scrollTo({ top: scroll.position, behavior: "instant" });
       }
       const y = scrollY;
-      pull.position = clamp(pull.position + (y - lastY) * .38, 28);
+      pull.position = clamp(pull.position + (y - lastY) * .55, 40);
       pull = stepFluidMotion(pull, 0, dt);
       lastY = y;
       if (!wheelActive && Math.abs(pull.position) < .08 && Math.abs(pull.velocity) < 1) { reset(); return; }
@@ -83,8 +84,8 @@ export function useFluidScroll(): WheelMotion {
         const amount = pull.position * sheet.weight;
         section.setAttribute("data-fluid-surface", "");
         section.style.setProperty("--fluid-pull", `${amount}px`);
-        section.style.setProperty("--fluid-shear", `${-amount * .009}deg`);
-        section.style.setProperty("--fluid-stretch", String(1 + amount * .65 / Math.max(320, sheet.height)));
+        section.style.setProperty("--fluid-shear", `${-amount * .0105}deg`);
+        section.style.setProperty("--fluid-stretch", String(1 + amount * .72 / Math.max(320, sheet.height)));
         section.style.setProperty("--fluid-origin", `${Math.max(0, Math.min(sheet.height, y + innerHeight * .5 - sheet.top))}px`);
       }
       frame = requestAnimationFrame(tick);
@@ -120,6 +121,10 @@ export function useFluidScroll(): WheelMotion {
       if (wheelActive || Math.abs(scrollY - lastY) > .5) wake();
     };
     const onNavigation = () => { ignoreUntil = performance.now() + 500; reset(); };
+    const onResize = () => {
+      if (innerWidth !== viewportWidth) { viewportWidth = innerWidth; onNavigation(); }
+      else reset();
+    };
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Element) || !event.target.closest("a,button,input,textarea,select")) { stop(); return; }
       // Keep a moving control under the finger until its real click is delivered.
@@ -139,7 +144,7 @@ export function useFluidScroll(): WheelMotion {
     window.addEventListener("scroll", onScroll, { passive: true });
     window.addEventListener("keydown", onNavigation, true);
     window.addEventListener("hashchange", onNavigation); window.addEventListener("popstate", onNavigation);
-    window.addEventListener("resize", onNavigation); window.addEventListener("blur", release);
+    window.addEventListener("resize", onResize); window.addEventListener("blur", release);
     window.addEventListener("portfolio:layout-start", stop); window.addEventListener("portfolio:regroup", stop);
     window.addEventListener("portfolio:fast-return-start", stop);
     document.addEventListener("pointerdown", onPointerDown, true);
@@ -152,7 +157,7 @@ export function useFluidScroll(): WheelMotion {
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("keydown", onNavigation, true);
       window.removeEventListener("hashchange", onNavigation); window.removeEventListener("popstate", onNavigation);
-      window.removeEventListener("resize", onNavigation); window.removeEventListener("blur", release);
+      window.removeEventListener("resize", onResize); window.removeEventListener("blur", release);
       window.removeEventListener("portfolio:layout-start", stop); window.removeEventListener("portfolio:regroup", stop);
       window.removeEventListener("portfolio:fast-return-start", stop);
       document.removeEventListener("pointerdown", onPointerDown, true);

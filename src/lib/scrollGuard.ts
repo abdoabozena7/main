@@ -46,6 +46,7 @@ export function startScrollGuard() {
     let cueVisible = false;
     let touchOrigin: EventTarget | null = null, touchOriginBlocked = false, touchOriginDirty = true;
     let gestureHeight = 1;
+    let viewportWidth = innerWidth;
     let lineHeight: number | undefined;
     const wheelLineHeight = () => {
       if (lineHeight === undefined) {
@@ -74,7 +75,8 @@ export function startScrollGuard() {
       stopInertia(); setSource('none'); touching = false; owned = false;
       releaseVelocity = 0; lastReverse = false; endScrollReturn(); hide();
     };
-    const blockedByPage = () => document.hidden || !document.hasFocus() ||
+    // Visible WebViews may deliver real input while hasFocus() remains false.
+    const blockedByPage = () => document.hidden ||
       !!document.querySelector('[role="dialog"],[data-exploration-map]') ||
       !!document.activeElement?.matches('input,textarea,select,[contenteditable]:not([contenteditable="false"])');
     const blockedByOrigin = (origin: EventTarget | null) => {
@@ -176,7 +178,11 @@ export function startScrollGuard() {
       };
       frame = requestAnimationFrame(coast);
     };
-    const resize = () => { lineHeight = undefined; cancel(); };
+    const resize = () => {
+      lineHeight = undefined;
+      invalidateTouchOrigin();
+      if (innerWidth !== viewportWidth) { viewportWidth = innerWidth; cancel(); }
+    };
     const visibility = () => { if (document.hidden) cancel(); };
     window.addEventListener('wheel', wheel, { passive: false });
     window.addEventListener('portfolio:layout-start', invalidateTouchOrigin);

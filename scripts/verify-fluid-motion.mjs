@@ -106,7 +106,8 @@ try {
       const intermediate = new Set(frames.filter(frame => frame.y > before.y && frame.y < before.y + 120).map(frame => frame.y));
       check(`${width}: wheel input progresses through real intermediate positions`, intermediate.size >= 4, { positions: intermediate.size, from: before.y, to: frames.at(-1).y });
       check(`${width}: content bends and pulls rather than only smooth-scrolling`,
-        Math.abs(peak.ty) >= 2 && Math.abs(peak.shear) > .0001 && Math.abs(peak.scale - 1) > .001, peak);
+        Math.abs(peak.ty) >= 25 && Math.abs(peak.ty) <= 44 &&
+        Math.abs(peak.shear) > .0001 && Math.abs(peak.scale - 1) > .001, peak);
       const after = await page.locator('[data-project="hivo"]').evaluate(card => ({
         y: scrollY, top: card.getBoundingClientRect().top, transform: getComputedStyle(card).transform,
         active: document.querySelectorAll("[data-fluid-surface]").length,

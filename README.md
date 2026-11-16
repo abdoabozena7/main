@@ -13,6 +13,11 @@ gesture exemptions are shared by early startup and the mounted page.
 `npm run test:startup` tests the production preview (default port 4182) with the
 real renderer deliberately held back, throttled CPU/network, and first wheel/touch
 gestures. It also checks one guard instance and fluid readiness at first paint.
+Visible embedded browsers do not need to report `document.hasFocus()` for real
+wheel/touch input to work. Height-only toolbar resizes preserve an active gesture;
+width/orientation changes still cancel it safely. Fluid cleanup does not require
+the global `CSSTransition` constructor. `npm run test:in-app` simulates these
+conditions in Edge; it is not a test inside the actual Instagram/TikTok apps.
 This release retains below-fold content assembly, adaptive browsing
 and the original fast-scroll resistance/"Slow Down" messages. Only the moving
 cursor actors, custom mouse pointer and hero agent illustration stay removed.
@@ -31,6 +36,8 @@ Touch keeps the original gesture rules and gains the same visual drag response.
 Content still being assembled is not distorted. Reduced motion keeps spatial
 drag disabled. Remove `useFluidScroll` from `AdaptiveBrowsing` to disable only
 this layer without removing content animation or the fast-scroll messages.
+The stronger pull is bounded to 40px, with modest additional stretch/shear; input
+distance, fast-scroll thresholds and reduced-motion behavior are unchanged.
 
 The media optimization still serves responsive WebP thumbnails on desktop as well as
 mobile, sized for the actual cards, certificates and portrait. Below-fold images
