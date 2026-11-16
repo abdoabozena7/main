@@ -51,7 +51,8 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const coarse = matchMedia("(pointer: coarse)");
     const narrow = matchMedia("(max-width: 767px)");
-    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-construction-section]"));
+    // The opening profile is complete from first paint; assembly is below-fold only.
+    const sections = Array.from(document.querySelectorAll<HTMLElement>("[data-construction-section]:not(#hero)"));
     const targets: Target[] = [];
     const cursors = Array.from(layer.querySelectorAll<HTMLElement>("[data-agent]"));
     const guides = Array.from(layer.querySelectorAll<SVGGElement>("[data-guide]"));
@@ -85,7 +86,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
     let director: ReturnType<typeof createConstructionDirector> | undefined;
     let loadingDirector = false, directorJump = jump;
     let viewY = 0, viewWidth = 0, viewHeight = 0;
-    const nameHeading = document.querySelector<HTMLElement>('[data-construction-scene="letters"]');
+    const nameHeading = hero?.querySelector<HTMLElement>('[data-construction-scene="letters"]') ?? null;
     const nameScene = nameHeading ? createNameConstruction(nameHeading, layer) : null;
 
     const registerTargets = (section: HTMLElement) => {

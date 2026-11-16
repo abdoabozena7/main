@@ -39,9 +39,8 @@ try {
       await page.getByRole("heading", { level: 1 }).waitFor();
       await page.evaluate(() => document.fonts.ready);
       const noAgents = () => page.locator("[data-hero-agents],.agent-pointer-shape,.virtual-agent,.scan-agent,.curzr-arrow-pointer").count();
-      await page.waitForFunction(() => document.querySelector("#hero h1")?.getAttribute("data-constructed") === "true" &&
-        document.querySelector("#hero a[download]")?.getAttribute("data-constructed") === "true");
-      check(`${width}: content animation completes without cursor actors`, await noAgents() === 0 &&
+      check(`${width}: opening profile is complete without construction or cursor actors`, await noAgents() === 0 &&
+        await page.locator("[data-name-assembly]").count() === 0 &&
         await page.locator("[data-content-construction]").count() === 1 &&
         await page.locator("#hero [data-building]").count() === 0);
       check(`${width}: native pointer`, await page.evaluate(() => !document.documentElement.classList.contains("curzr-arrow-active") && getComputedStyle(document.body).cursor !== "none"));

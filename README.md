@@ -4,7 +4,9 @@ Live URL: https://abdoabozena7.github.io/main/
 GitHub Pages publishes pushes to `main` through
 [Deploy portfolio](.github/workflows/pages.yml).
 
-This release restores content assembly, name animation, adaptive browsing
+The opening profile (name, badge, tags and buttons) renders complete immediately
+on desktop and mobile, without any worker/name-building sequence.
+This release retains below-fold content assembly, adaptive browsing
 and the original fast-scroll resistance/"Slow Down" messages. Only the moving
 cursor actors, custom mouse pointer and hero agent illustration stay removed.
 The construction clock keeps hidden worker slots for content placement, but does
@@ -34,7 +36,7 @@ http://127.0.0.1:8080/main/ ; set `PORTFOLIO_URL` to use another local preview.
 The browsing check covers desktop/tablet/mobile, fast-scroll resistance/messages,
 responsive media, CV download, previews/focus recovery, score, terminal and deep
 links. Screenshots and the report go to ignored `output/playwright/lightweight-browsing`.
-The motion check records actual name/page-pull movement, exact settled geometry,
+The motion check verifies no opening worker construction, actual page-pull movement, exact settled geometry,
 idle callbacks, touch feedback and reduced motion in `output/playwright/fluid-motion`.
 
 Run `npm run dev -- --host 127.0.0.1 --port 8080` and open

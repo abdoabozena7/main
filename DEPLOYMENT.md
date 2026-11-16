@@ -2,7 +2,9 @@
 
 Public URL: https://abdoabozena7.github.io/main/
 
-This correction preserves normal content/name animation, adaptive browsing,
+The opening profile renders complete from first paint on desktop and mobile;
+the worker/name-building animation is excluded from the hero entirely.
+This correction preserves below-fold content animation, adaptive browsing,
 the original fast-scroll resistance and "Slow Down" messages. Moving cursor/agent
 visuals and the hero mascot overlay remain removed.
 

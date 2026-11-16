@@ -44,17 +44,18 @@ try {
         window.requestAnimationFrame = callback => request(at => { window.motionCallbacks++; callback(at); });
       });
       await page.goto(url, { waitUntil: "domcontentloaded" });
-      await page.locator("[data-name-assembly]").waitFor({ state: "attached" });
-      await page.waitForFunction(() => {
-        const progress = Number(document.querySelector("[data-name-assembly]")?.getAttribute("data-name-progress"));
-        return progress > .08 && progress < .7;
-      });
-      const firstNamePose = await page.locator('[data-name-piece="first"]').evaluate(node => getComputedStyle(node).transform);
-      await page.screenshot({ path: path.join(out, `${width}-name-in-motion.png`) });
-      await page.waitForTimeout(100);
-      const secondNamePose = await page.locator('[data-name-piece="first"]').evaluate(node => getComputedStyle(node).transform);
-      check(`${width}: original name choreography visibly advances`, firstNamePose !== secondNamePose, { firstNamePose, secondNamePose });
-      await page.waitForFunction(() => document.querySelector("#hero h1")?.getAttribute("data-constructed") === "true");
+      await page.getByRole("heading", { level: 1 }).waitFor();
+      const sampleHero = () => page.evaluate(() => ({
+        workshops: document.querySelectorAll("[data-name-assembly],#hero [data-building],#hero [data-scene-building]").length,
+        clip: getComputedStyle(document.querySelector("#hero h1")).clipPath,
+        opacity: getComputedStyle(document.querySelector("#hero h1")).opacity,
+      }));
+      const initialHero = await sampleHero();
+      await page.waitForTimeout(3200);
+      const settledHero = await sampleHero();
+      check(`${width}: opening profile never enters worker construction`,
+        initialHero.workshops === 0 && settledHero.workshops === 0 &&
+        initialHero.clip === "none" && initialHero.opacity === "1", { initialHero, settledHero });
       await page.screenshot({ path: path.join(out, `${width}-hero-settled.png`) });
       if (width === 390) await page.getByRole("button", { name: "Menu", exact: true }).click();
       await page.locator('nav a[href="#projects"]:visible').click();
@@ -170,7 +171,7 @@ try {
   try {
     const page = await context.newPage();
     await page.goto(url, { waitUntil: "load" });
-    await page.waitForFunction(() => document.querySelector("#hero h1")?.getAttribute("data-constructed") === "true");
+    await page.getByRole("heading", { level: 1 }).waitFor();
     const from = await page.evaluate(() => scrollY);
     await page.mouse.wheel(0, 80);
     await page.waitForTimeout(250);
