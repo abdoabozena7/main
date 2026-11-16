@@ -47,6 +47,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
   useLayoutEffect(() => {
     const layer = layerRef.current;
     if (!layer) return;
+    const pointersVisible = !layer.hasAttribute("data-pointerless");
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const coarse = matchMedia("(pointer: coarse)");
     const narrow = matchMedia("(max-width: 767px)");
@@ -252,6 +253,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       return { rect, x: Math.max(10, Math.min(viewWidth - 20, x)), y: Math.max(78, Math.min(viewHeight - 42, y)) };
     };
     const renderHeroEditor = (job: HeroOverlayJob, now: number, offsetX: number, offsetY: number, source: "overlay" | "name" | "content" = "overlay", letter?: number) => {
+      if (!pointersVisible) return;
       const index = job.index, cursor = cursors[index];
       if (!cursor) return;
       const contact = { x: job.x + offsetX, y: job.y + offsetY };
@@ -382,14 +384,14 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
         const cursor = cursors[index];
         delete cursor.dataset.letter;
         delete cursor.dataset.overlayJob;
-        if (assembling && assembling.progress < 1 && nameScene) {
+        if (pointersVisible && assembling && assembling.progress < 1 && nameScene) {
           const at = nameScene.point(assembling.progress, index, viewY);
           if (at) {
             renderHeroEditor({ index, ...at }, now, offsetX, viewY, "name", at.letter);
             continue;
           }
         }
-        const overlayJob=overlayWork.jobs.find(job=>job.index===index);
+        const overlayJob=pointersVisible ? overlayWork.jobs.find(job=>job.index===index) : undefined;
         if (overlayJob) { renderHeroEditor(overlayJob, now, offsetX, viewY); continue; }
         const assignment = assignments[index];
         const role = cursor.dataset.role;
@@ -472,7 +474,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       loadingDirector = true;
       void import("@/lib/constructionDirector").then(({ createConstructionDirector }) => {
         if (stopped || mobileRegistry || reduced.matches) return;
-        director = createConstructionDirector({ layer, sections, pointers: cursors, guides, carets, enabled: true, wake: schedule });
+        director = createConstructionDirector({ layer, sections, pointers: cursors, guides, carets, pointersVisible, enabled: true, wake: schedule });
         if (directorJump) director.jump();
         if (reflowing) director.pause();
         schedule();
@@ -497,7 +499,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
     };
     const onActivityReady = () => { if (!mobileRegistry && !reflowing) { director?.invalidate(); dirty = true; schedule(); } };
     const onHeroOverlayWork = () => {
-      if(stopped||document.hidden||reflowing||reduced.matches)return;
+      if(!pointersVisible||stopped||document.hidden||reflowing||reduced.matches)return;
       const current=getHeroOverlayWork();
       cursors.forEach((cursor,index)=>{
         if (cursor.dataset.overlayJob && !current.jobs.some(job => job.index === index)) {

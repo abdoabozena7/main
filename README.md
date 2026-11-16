@@ -1,21 +1,20 @@
-# Current lightweight portfolio
+# Current animated portfolio
 
 Live URL: https://abdoabozena7.github.io/main/
 GitHub Pages publishes pushes to `main` through
 [Deploy portfolio](.github/workflows/pages.yml).
 
-Stage 1 removes the autonomous hero/lower-page agent layers and animated custom
-cursor from the live route. Text and controls render immediately instead of
-waiting for construction. The native pointer, reduced-motion support, Microsoft
-story link, CV and image previews remain available. Historical animation modules
-are retained but are not imported by the active page.
+The local correction restores content assembly, name animation, adaptive browsing
+and the original fast-scroll resistance/"Slow Down" messages. Only the moving
+cursor actors, custom mouse pointer and hero agent illustration stay removed.
+The construction clock keeps hidden worker slots for content placement, but does
+not render cursor SVGs or run pointer travel, helpers or parking animations.
 
-Stage 2 restores native wheel/touch scrolling at every speed. Scrolling no longer
-reverses direction, displays "Slow Down" interruptions, or automatically collapses
-and repositions cards. Project and credential descriptions are readable on mobile.
-The optional visit-local score still works, without taking control of navigation.
+The optional visit-local score remains mounted once, independently of navigation.
+Project and credential descriptions remain readable on mobile. Reduced motion
+exposes finished content and keeps the fast-scroll feedback without spatial effects.
 
-Stage 3 serves the existing responsive WebP thumbnails on desktop as well as
+The media optimization still serves responsive WebP thumbnails on desktop as well as
 mobile, sized for the actual cards, certificates and portrait. Below-fold images
 remain lazy-loaded; zoom still opens the original full-resolution file, with
 the original image retained as the thumbnail fallback.
@@ -30,8 +29,8 @@ links. Screenshots and the report go to ignored `output/playwright/lightweight-b
 Run `npm run dev -- --host 127.0.0.1 --port 8080` and open
 http://127.0.0.1:8080/main/ . Publishing remains a separate action.
 
-The motion/browsing experiments and acceptance scripts documented below describe
-older revisions, not the current lightweight experience.
+The older release records below are historical. The local correction is not
+published until a separate deployment is requested.
 
 ---
 

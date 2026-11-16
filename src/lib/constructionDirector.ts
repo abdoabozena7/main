@@ -5,7 +5,7 @@ import { getScrollIntent, type ScrollIntent } from "./scrollIntent";
 import { agentHeading, rendezvousPoint } from "./agentOrientation";
 import { crewEdge } from "./crewSupport";
 
-type DirectorOptions = { layer: HTMLDivElement; sections: HTMLElement[]; pointers: HTMLElement[]; guides: SVGGElement[]; carets: HTMLElement[]; enabled: boolean; wake: () => void };
+type DirectorOptions = { layer: HTMLDivElement; sections: HTMLElement[]; pointers: HTMLElement[]; guides: SVGGElement[]; carets: HTMLElement[]; pointersVisible?: boolean; enabled: boolean; wake: () => void };
 type Prop = { el: HTMLDivElement; target: string; source: string; clone?: HTMLElement };
 const styleProperties = ["box-sizing", "font-family", "font-size", "font-weight", "font-style", "line-height", "letter-spacing", "text-transform", "text-align", "text-decoration", "color", "background-color", "border-top", "border-right", "border-bottom", "border-left", "border-radius", "padding", "object-fit", "object-position", "filter", "opacity", "white-space", "overflow", "display", "align-items", "justify-content", "gap"];
 const stage = (elapsed: number, job: TimedJob) => clamp01((elapsed - job.start) / Math.max(1, job.durationMs));
@@ -32,6 +32,8 @@ function measureLines(el: PaintElement) {
 /** One director, called by the hero controller's existing rAF. No React frame state. */
 export function createConstructionDirector(options: DirectorOptions) {
   const { layer, sections, pointers, guides, carets, wake } = options;
+  const pointersVisible = options.pointersVisible !== false;
+  const colors = pointers.map(pointer => pointer.style.getPropertyValue("--agent-color"));
   const stageLayer = layer.querySelector<HTMLElement>("[data-scene-layer]")!;
   const props: Prop[] = pointers.map(() => {
     const el = document.createElement("div"); el.className = "scene-actor";
@@ -371,11 +373,12 @@ export function createConstructionDirector(options: DirectorOptions) {
     if (operation === "type" && s.lines.length) {
       const text = textFrame(s.lines, s.box.width, s.box.height, progress);
       x = destination.left + text.x + 2; y = destination.top + text.y + text.height * .75;
-      if (timing.phase !== "approach") carets[index].style.cssText = `background:${getComputedStyle(pointer).getPropertyValue("--agent-color")};height:${Math.max(10, text.height * .75)}px;transform:translate3d(${destination.left + text.x}px,${destination.top + text.y}px,0);opacity:${Math.floor(performance.now() / 380) % 2 ? .35 : .85}`;
+      if (timing.phase !== "approach") carets[index].style.cssText = `background:${colors[index]};height:${Math.max(10, text.height * .75)}px;transform:translate3d(${destination.left + text.x}px,${destination.top + text.y}px,0);opacity:${Math.floor(performance.now() / 380) % 2 ? .35 : .85}`;
     } else if (s.kind === "edge" && s.el instanceof SVGPathElement) {
       const point = s.el.getPointAtLength(s.el.getTotalLength() * progress), matrix = s.el.getScreenCTM();
       if (matrix) { const at = new DOMPoint(point.x, point.y).matrixTransform(matrix); x = at.x; y = at.y; }
     } else if (s.part === "cell") { x = destination.left + destination.width; y = destination.top + destination.height * progress; }
+    if (pointersVisible) {
     const contact = { x: x + scrollX, y: y + scrollY };
     let motion = motions.get(index);
     hubs.delete(index);
@@ -397,6 +400,7 @@ export function createConstructionDirector(options: DirectorOptions) {
     pointer.classList.add("scene-pointer"); pointer.dataset.edge = x > innerWidth - 135 ? "right" : "left";
     pointer.dataset.click = String(operation === "duplicate" && progress < .15 || operation === "align" && progress > .7);
     const action = pointer.querySelector<HTMLElement>(".agent-action")!; action.textContent = ` · ${operation}`; action.style.display = "inline";
+    }
     const actor = prop.el.parentElement!;
     prop.el.style.clipPath = "none";
     for (const el of [pointer, actor, prop.el, guides[index]]) {
@@ -426,21 +430,21 @@ export function createConstructionDirector(options: DirectorOptions) {
       actor.style.opacity = String(1 - clamp01((progress - .82) / .18));
       prop.el.style.width = `${sourceUnit.box.width}px`; prop.el.style.height = `${sourceUnit.box.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / sourceUnit.box.width},${box.height / sourceUnit.box.height})`;
-      prop.el.style.setProperty("--agent-color", getComputedStyle(pointer).getPropertyValue("--agent-color"));
+      prop.el.style.setProperty("--agent-color", colors[index]);
     } else if (operation === "drag" || operation === "replace") {
       const key = `asset:${s.id}`;
       if (prop.target !== key) { prop.el.replaceChildren(assetCopy(s)); prop.target = key; }
       actor.style.opacity = "1";
       prop.el.style.width = `${destination.width}px`; prop.el.style.height = `${destination.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / Math.max(1, destination.width)},${box.height / Math.max(1, destination.height)})`;
-      prop.el.style.setProperty("--agent-color", getComputedStyle(pointer).getPropertyValue("--agent-color"));
+      prop.el.style.setProperty("--agent-color", colors[index]);
       prop.el.style.clipPath = operation === "replace" ? `inset(0 ${(1 - progress) * 100}% 0 0)` : "none";
     } else if (["trace", "create-slot", "resize"].includes(operation) || s.kind === "token" && operation === "duplicate") {
       if (prop.target !== "empty") { prop.el.replaceChildren(); prop.target = "empty"; }
       actor.style.opacity = String(operation === "trace" ? .2 : .6);
       prop.el.style.width = `${destination.width}px`; prop.el.style.height = `${destination.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / Math.max(1, destination.width)},${box.height / Math.max(1, destination.height)})`;
-      prop.el.style.setProperty("--agent-color", getComputedStyle(pointer).getPropertyValue("--agent-color"));
+      prop.el.style.setProperty("--agent-color", colors[index]);
     }
   }
 
@@ -549,7 +553,7 @@ export function createConstructionDirector(options: DirectorOptions) {
           showActor(selected.job, selected.scene, selected.p, i);
           leaders.push(selected);
         }
-        for (const i of spare) {
+        if (pointersVisible) for (const i of spare) {
           if (leaders.length && !fast && !intent.hardJump) {
             // All available workers participate, even in a one-job scene.
             // Persistent helper bindings avoid jumping between unrelated tasks.

@@ -1,6 +1,5 @@
 import { createPortal } from "react-dom";
 import { useAdaptiveBrowsing } from "@/hooks/useAdaptiveBrowsing";
-import { useAttentionJourney } from "@/hooks/useAttentionJourney";
 import { useFastScrollReturn } from "@/hooks/useFastScrollReturn";
 import "@/styles/adaptive.css";
 import "@/styles/section-return.css";
@@ -21,7 +20,6 @@ export default function AdaptiveBrowsing() {
   const cue = useFastScrollReturn();
   const variant = returnVariants[Math.max(0, cue.activation - 1) % returnVariants.length];
   const [title, subtitle] = returnMessages[Math.max(0, cue.activation - 1) % returnMessages.length];
-  useAttentionJourney();
   return <>
     {createPortal(
       <div className="section-return-cue" data-visible={cue.visible} data-variant={variant}>

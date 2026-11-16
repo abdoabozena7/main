@@ -1,5 +1,4 @@
 import { useRef, type CSSProperties } from "react";
-import AgentPointer from "./AgentPointer";
 import { useScrollConstruction } from "@/hooks/useScrollConstruction";
 import { usePortfolioMediaPreload } from "@/hooks/usePortfolioMediaPreload";
 import { constructionAgents as agents } from "@/lib/agentConfig";
@@ -7,13 +6,13 @@ import "@/styles/construction.css";
 
 const wideOnly = (index: number) => [0, 2, 5].includes(index) ? undefined : "";
 
-/** A single decorative DOM/SVG layer, below controls and the real custom cursor. */
+/** Keep content choreography and its worker slots without drawing cursor actors. */
 export default function AgentConstruction() {
   const layer = useRef<HTMLDivElement>(null);
   usePortfolioMediaPreload();
   useScrollConstruction(layer);
   return (
-    <div ref={layer} data-agent-layer aria-hidden="true" className="agent-construction">
+    <div ref={layer} data-content-construction data-pointerless aria-hidden="true" className="agent-construction">
       <div className="scene-agent-layer" data-scene-layer />
       <svg className="construction-guides" width="100%" height="100%">
         {agents.map((agent, index) => (
@@ -35,10 +34,8 @@ export default function AgentConstruction() {
         </div>
       ))}
       {agents.map((agent, index) => (
-        <div key={agent.name} data-agent={agent.task} data-role={agent.role} data-wide-agent={wideOnly(index)} className="virtual-agent" style={{ "--agent-color": agent.color } as CSSProperties}>
-          <span className="agent-click" />
-          <AgentPointer />
-          <span className="agent-label"><i />{agent.name}<span className="agent-action" /></span>
+        <div key={agent.name} data-agent={agent.task} data-role={agent.role} className="construction-worker" hidden style={{ "--agent-color": agent.color } as CSSProperties}>
+          <span className="agent-action" />
         </div>
       ))}
       {agents.map((agent, index) => <div key={agent.task} data-caret={agent.task} data-wide-agent={wideOnly(index)} className="construction-caret" style={{ background: agent.color }} />)}

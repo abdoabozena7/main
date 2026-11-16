@@ -38,8 +38,12 @@ try {
       await page.goto(url, { waitUntil: "load" });
       await page.getByRole("heading", { level: 1 }).waitFor();
       await page.evaluate(() => document.fonts.ready);
-      const noAgents = () => page.locator("[data-agent-layer],[data-hero-agents],.virtual-agent,.scan-agent,.scene-actor,.curzr-arrow-pointer").count();
-      check(`${width}: no agents or hidden construction content`, await noAgents() === 0 && await page.locator("[data-building],[data-scene-building]").count() === 0);
+      const noAgents = () => page.locator("[data-hero-agents],.agent-pointer-shape,.virtual-agent,.scan-agent,.curzr-arrow-pointer").count();
+      await page.waitForFunction(() => document.querySelector("#hero h1")?.getAttribute("data-constructed") === "true" &&
+        document.querySelector("#hero a[download]")?.getAttribute("data-constructed") === "true");
+      check(`${width}: content animation completes without cursor actors`, await noAgents() === 0 &&
+        await page.locator("[data-content-construction]").count() === 1 &&
+        await page.locator("#hero [data-building]").count() === 0);
       check(`${width}: native pointer`, await page.evaluate(() => !document.documentElement.classList.contains("curzr-arrow-active") && getComputedStyle(document.body).cursor !== "none"));
       await page.screenshot({ path: path.join(out, `${width}-hero.png`) });
 
@@ -70,8 +74,9 @@ try {
       }
       await page.waitForTimeout(400);
       const scroll = await page.evaluate(from => ({ from, to: scrollY, ...window.lightweightProbe }), from);
-      check(`${width}: fast downward input stays native`, scroll.to > scroll.from && scroll.prevented === 0 && scroll.commands === 0, scroll);
-      check(`${width}: scrolling does not collapse cards`, await page.locator("[data-scan-active],.section-return-cue").count() === 0 &&
+      check(`${width}: fast input restores resistance and feedback`, scroll.to < scroll.from && scroll.prevented === 3 && scroll.commands === 3 &&
+        await page.locator('.section-return-cue[data-visible="true"] .return-popup').isVisible(), scroll);
+      check(`${width}: details return after fast input stops`, await page.locator("[data-scan-active]").count() === 0 &&
         JSON.stringify(heights) === JSON.stringify(await page.locator("[data-project]").evaluateAll(cards => cards.map(card => card.offsetHeight))));
       const beforeUp = await page.evaluate(() => scrollY);
       await page.mouse.wheel(0, -600);
@@ -83,12 +88,12 @@ try {
         const from = await page.evaluate(() => scrollY);
         await cdp.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 200, y: 680 }] });
         for (let step = 1; step <= 8; step++) {
-          await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 200, y: 680 - step * 45 }] });
-          await page.waitForTimeout(20);
+          await page.waitForTimeout(80);
+          await cdp.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 200, y: 680 - step * 25 }] });
         }
         await cdp.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         await page.waitForTimeout(450);
-        check("390: native upward swipe moves down", await page.evaluate(() => scrollY) > from);
+        check("390: gentle upward swipe still moves down", await page.evaluate(() => scrollY) > from);
         await cdp.detach();
       }
 
@@ -130,7 +135,9 @@ try {
       await page.reload({ waitUntil: "load" });
       await page.evaluate(() => document.fonts.ready);
       await page.waitForFunction(() => {
-        const top = document.getElementById("project-hivo").getBoundingClientRect().top;
+        const node = document.getElementById("project-hivo");
+        if (!node) return false;
+        const top = node.getBoundingClientRect().top;
         return top >= 75 && top < 180;
       });
       check(`${width}: direct project link survives reload`, true);

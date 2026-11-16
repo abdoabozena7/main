@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import Navbar from "@/components/Navbar";
 import HeroSection from "@/components/HeroSection";
 import AboutSection from "@/components/AboutSection";
@@ -10,27 +9,11 @@ import ContactSection from "@/components/ContactSection";
 import ScrollToTop from "@/components/ScrollToTop";
 import Terminal from "@/components/Terminal";
 import Finale from "@/components/Finale";
+import AdaptiveBrowsing from "@/components/AdaptiveBrowsing";
+import ContentConstruction from "@/components/AgentConstruction";
 import "@/styles/palette.css";
 
 const Index = () => {
-  useEffect(() => {
-    const hash = window.location.hash;
-    if (!hash) return;
-    const navigation = new AbortController();
-    const cancel = () => navigation.abort();
-    for (const event of ["wheel", "touchstart", "pointerdown", "keydown", "hashchange", "popstate"]) {
-      window.addEventListener(event, cancel, { once: true, passive: true, signal: navigation.signal });
-    }
-    // Initial fragments used to be resolved by the animation director.
-    void document.fonts.ready.then(() => {
-      if (!navigation.signal.aborted && window.location.hash === hash) {
-        document.getElementById(hash.slice(1))?.scrollIntoView({ behavior: "instant", block: "start" });
-      }
-      navigation.abort();
-    });
-    return cancel;
-  }, []);
-
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
@@ -44,6 +27,8 @@ const Index = () => {
       <ProjectsSection />
       <ContactSection />
       <Finale />
+      <AdaptiveBrowsing />
+      <ContentConstruction />
     </div>
   );
 };
