@@ -3,6 +3,7 @@ import { FAST_SCROLL_RETURN_CONFIG as config } from "@/lib/fastScrollReturn";
 import { initialScrollVelocity, sampleScrollVelocity, wheelPixels } from "@/lib/scrollVelocity";
 import { createScrollBurst, scrollBurstIdleMs, scrollCommand } from "@/lib/scrollCommand";
 import { endScrollReturn, navigateForScrollReturn } from "@/lib/scrollIntent";
+import type { WheelMotion } from "@/lib/fluidScroll";
 
 const inputTime = (event: Event) => {
   const timestamp = event.timeStamp;
@@ -10,7 +11,7 @@ const inputTime = (event: Event) => {
 };
 
 /** Interpret eligible commands before page movement. No section/exposure gate. */
-export function useFastScrollReturn() {
+export function useFastScrollReturn(wheelMotion?: WheelMotion) {
   const [cue, setCue] = useState({ activation: 0, visible: false });
   useEffect(() => {
     if (!config.enabled) return;
@@ -48,6 +49,7 @@ export function useFastScrollReturn() {
       source = next; burst.reset(); velocity = initialScrollVelocity();
     };
     const cancel = () => {
+      wheelMotion?.stop();
       stopInertia(); setSource('none'); touching = false; owned = false;
       releaseVelocity = 0; lastReverse = false; endScrollReturn(); hide();
     };
@@ -90,9 +92,11 @@ export function useFastScrollReturn() {
       const elapsed = velocity.at === null ? Infinity : at - velocity.at;
       const gap = elapsed < 0 || elapsed >= scrollBurstIdleMs ? null : elapsed;
       const command = readCommand(delta, at, viewport, gap, true);
-      if (command.reverse) { event.preventDefault(); apply(-delta, true, 'wheel', command.entered); }
+      if (command.reverse) { wheelMotion?.stop(); event.preventDefault(); apply(-delta, true, 'wheel', command.entered); }
+      else if (wheelMotion?.move(delta)) event.preventDefault();
     };
     const touchStart = (event: TouchEvent) => {
+      wheelMotion?.stop();
       stopInertia(); touching = false; owned = false; releaseVelocity = 0; lastReverse = false;
       if (event.touches.length !== 1 || blocked(event.target)) { cancel(); return; }
       touchOrigin = event.target; touchOriginBlocked = false; touchOriginDirty = false;
@@ -165,6 +169,6 @@ export function useFastScrollReturn() {
       window.removeEventListener('portfolio:layout-settled', invalidateTouchOrigin);
       window.removeEventListener('keydown', cancel); window.removeEventListener('hashchange', cancel); window.removeEventListener('popstate', cancel); window.removeEventListener('blur', cancel); window.removeEventListener('resize', resize); document.removeEventListener('visibilitychange', visibility);
     };
-  }, []);
+  }, [wheelMotion]);
   return cue;
 }

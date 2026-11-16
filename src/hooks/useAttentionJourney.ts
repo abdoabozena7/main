@@ -297,12 +297,14 @@ export function useAttentionJourney() {
     window.addEventListener("keydown", keyboardJump);
     window.addEventListener("resize", invalidate, { passive: true });
     window.addEventListener("portfolio:layout-start", onLayoutStart); window.addEventListener("portfolio:layout-settled", onLayoutSettled); window.addEventListener("portfolio:activity-ready", activityReady);
+    window.addEventListener("portfolio:fluid-settled", invalidate);
     document.addEventListener("click", click, true); document.addEventListener("visibilitychange", visibility); window.addEventListener("focus", visibility); window.addEventListener("blur", visibility);
     publish(); startClock();
     return () => {
       unsubscribe(); observer.disconnect(); resize.disconnect(); stopClock();
       window.removeEventListener("keydown", keyboardJump); window.removeEventListener("resize", invalidate);
       window.removeEventListener("portfolio:layout-start", onLayoutStart); window.removeEventListener("portfolio:layout-settled", onLayoutSettled); window.removeEventListener("portfolio:activity-ready", activityReady);
+      window.removeEventListener("portfolio:fluid-settled", invalidate);
       document.fonts.removeEventListener("loadingdone", invalidate);
       document.removeEventListener("click", click, true); document.removeEventListener("visibilitychange", visibility); window.removeEventListener("focus", visibility); window.removeEventListener("blur", visibility);
       records.forEach(story => { delete story.el.dataset.discoveryId; delete story.el.dataset.quality; delete story.el.dataset.qualityCoverage; delete story.el.dataset.qualityEncountered; delete story.el.dataset.qualityConfidence; delete story.el.dataset.explorationComplete; story.el.style.removeProperty("--exploration-evidence"); }); resetExploration();

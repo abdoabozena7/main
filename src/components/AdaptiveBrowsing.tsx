@@ -1,6 +1,7 @@
 import { createPortal } from "react-dom";
 import { useAdaptiveBrowsing } from "@/hooks/useAdaptiveBrowsing";
 import { useFastScrollReturn } from "@/hooks/useFastScrollReturn";
+import { useFluidScroll } from "@/hooks/useFluidScroll";
 import "@/styles/adaptive.css";
 import "@/styles/section-return.css";
 
@@ -16,8 +17,9 @@ const returnMessages = [
 const returnVariants = ["ticket", "terminal", "note", "editorial", "layers", "glitch"];
 
 export default function AdaptiveBrowsing() {
+  const wheelMotion = useFluidScroll();
   useAdaptiveBrowsing();
-  const cue = useFastScrollReturn();
+  const cue = useFastScrollReturn(wheelMotion);
   const variant = returnVariants[Math.max(0, cue.activation - 1) % returnVariants.length];
   const [title, subtitle] = returnMessages[Math.max(0, cue.activation - 1) % returnMessages.length];
   return <>

@@ -81,7 +81,7 @@ try {
       const beforeUp = await page.evaluate(() => scrollY);
       await page.mouse.wheel(0, -600);
       await page.waitForTimeout(400);
-      check(`${width}: upward input stays native`, await page.evaluate(() => scrollY) < beforeUp);
+      check(`${width}: upward input keeps its direction`, await page.evaluate(() => scrollY) < beforeUp);
 
       if (width === 390) {
         const cdp = await context.newCDPSession(page);

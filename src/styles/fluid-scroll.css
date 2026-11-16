@@ -1,0 +1,10 @@
+html body [data-fluid-surface] {
+  transform-origin: 50% var(--fluid-origin);
+  transform: translate3d(0, var(--fluid-pull), 0) skewY(var(--fluid-shear)) scaleY(var(--fluid-stretch));
+  will-change: transform;
+  transition-property: box-shadow, background-color, color, border-color;
+}
+
+@media (prefers-reduced-motion: reduce), print {
+  [data-fluid-surface] { transform: none !important; will-change: auto; }
+}

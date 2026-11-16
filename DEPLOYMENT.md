@@ -1,3 +1,31 @@
+# Animated pointerless portfolio release - 16 November 2026
+
+Public URL: https://abdoabozena7.github.io/main/
+
+This correction preserves normal content/name animation, adaptive browsing,
+the original fast-scroll resistance and "Slow Down" messages. Moving cursor/agent
+visuals and the hero mascot overlay remain removed.
+
+The release has two separately reversible commits:
+
+1. Restore the original animation and speed-sensitive interaction without cursors.
+2. Add the fluid page-pull layer, including touch feedback and reduced-motion support.
+
+Revert the second commit alone to remove the fluid effect without losing the
+restored interactions. Responsive media and original image previews are preserved.
+
+Publication uses the existing [Deploy portfolio workflow](.github/workflows/pages.yml)
+on pushes to `origin/main`. The current publication candidate passed 34 unit tests,
+application types/lint, the production build and 105 production-browser checks
+(23 motion, 57 general browsing and 25 original scroll-command checks).
+After publishing, verify the workflow's exact head and live JS/CSS bytes, then run
+`test:motion`, `test:lightweight` and `test:scroll-command` with `PORTFOLIO_URL`
+set to the public URL.
+
+The earlier release records below are historical.
+
+---
+
 # Lightweight portfolio release - 14 November 2026
 
 Public URL: https://abdoabozena7.github.io/main/

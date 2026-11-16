@@ -555,6 +555,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
     window.addEventListener("portfolio:layout-start", onLayoutStart); window.addEventListener("portfolio:layout-settled", onLayoutSettled);
     window.addEventListener("resize", onMeasure, { passive: true }); window.addEventListener("portfolio:regroup", onRegroup);
     window.addEventListener("portfolio:activity-ready", onActivityReady);
+    window.addEventListener("portfolio:fluid-settled", onMeasure);
     window.addEventListener("portfolio:hero-overlay-work",onHeroOverlayWork);
     window.addEventListener("hashchange", onJump); window.addEventListener("popstate", onJump); window.addEventListener("pageshow", onPageShow);
     document.addEventListener("focusin", onFocus); document.addEventListener("visibilitychange", onVisibility);
@@ -581,6 +582,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       window.removeEventListener("portfolio:layout-start", onLayoutStart); window.removeEventListener("portfolio:layout-settled", onLayoutSettled);
       unsubscribe(); window.removeEventListener("resize", onMeasure); window.removeEventListener("portfolio:regroup", onRegroup);
       window.removeEventListener("portfolio:activity-ready", onActivityReady);
+      window.removeEventListener("portfolio:fluid-settled", onMeasure);
       window.removeEventListener("portfolio:hero-overlay-work",onHeroOverlayWork);
       window.removeEventListener("hashchange", onJump); window.removeEventListener("popstate", onJump); window.removeEventListener("pageshow", onPageShow);
       document.removeEventListener("focusin", onFocus); document.removeEventListener("visibilitychange", onVisibility);

@@ -4,7 +4,7 @@ Live URL: https://abdoabozena7.github.io/main/
 GitHub Pages publishes pushes to `main` through
 [Deploy portfolio](.github/workflows/pages.yml).
 
-The local correction restores content assembly, name animation, adaptive browsing
+This release restores content assembly, name animation, adaptive browsing
 and the original fast-scroll resistance/"Slow Down" messages. Only the moving
 cursor actors, custom mouse pointer and hero agent illustration stay removed.
 The construction clock keeps hidden worker slots for content placement, but does
@@ -14,23 +14,34 @@ The optional visit-local score remains mounted once, independently of navigation
 Project and credential descriptions remain readable on mobile. Reduced motion
 exposes finished content and keeps the fast-scroll feedback without spatial effects.
 
+The separate fluid-scroll layer gives ordinary wheel input a critically damped
+page-pull, with a bounded stretch/shear of completed visible content blocks. It settles
+back to the exact original geometry, sleeps when idle and yields immediately to
+the original fast-scroll reversal, links, keyboard, forms and image dialogs.
+Touch keeps the original gesture rules and gains the same visual drag response.
+Content still being assembled is not distorted. Reduced motion keeps spatial
+drag disabled. Remove `useFluidScroll` from `AdaptiveBrowsing` to disable only
+this layer without removing content animation or the fast-scroll messages.
+
 The media optimization still serves responsive WebP thumbnails on desktop as well as
 mobile, sized for the actual cards, certificates and portrait. Below-fold images
 remain lazy-loaded; zoom still opens the original full-resolution file, with
 the original image retained as the thumbnail fallback.
 
-Current checks: `npm test`, `npm run build`, and `npm run test:lightweight`
+Current checks: `npm test`, `npm run build`, `npm run test:lightweight` and `npm run test:motion`
 (with a local server running). The browser check defaults to
 http://127.0.0.1:8080/main/ ; set `PORTFOLIO_URL` to use another local preview.
-It covers desktop/tablet/mobile, native wheel/swipe direction, stable cards,
+The browsing check covers desktop/tablet/mobile, fast-scroll resistance/messages,
 responsive media, CV download, previews/focus recovery, score, terminal and deep
 links. Screenshots and the report go to ignored `output/playwright/lightweight-browsing`.
+The motion check records actual name/page-pull movement, exact settled geometry,
+idle callbacks, touch feedback and reduced motion in `output/playwright/fluid-motion`.
 
 Run `npm run dev -- --host 127.0.0.1 --port 8080` and open
 http://127.0.0.1:8080/main/ . Publishing remains a separate action.
 
-The older release records below are historical. The local correction is not
-published until a separate deployment is requested.
+The older release records below are historical. The restored motion and optional
+fluid-scroll layer are separate commits so the fluid effect can be reverted alone.
 
 ---
 
