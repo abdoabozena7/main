@@ -2,7 +2,7 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import { stepFluidMotion, type FluidState, type WheelMotion } from "@/lib/fluidScroll";
 import "@/styles/fluid-scroll.css";
 
-type Sheet = { top: number; height: number };
+type Sheet = { top: number };
 const properties = ["transform", "transform-origin"];
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
 
@@ -49,8 +49,7 @@ export function useFluidScroll(): WheelMotion {
       reset();
     };
     const collect = () => {
-      const height = page.offsetHeight;
-      for (const surface of surfaces) sheets.set(surface, { top: surface === page ? page.offsetTop : 0, height });
+      for (const surface of surfaces) sheets.set(surface, { top: surface === page ? page.offsetTop : 0 });
       dirty = false;
     };
     const tick = (now: number) => {
@@ -72,10 +71,11 @@ export function useFluidScroll(): WheelMotion {
       if (!wheelActive && Math.abs(pull.position) < .08 && Math.abs(pull.velocity) < 1) { reset(); return; }
       if (dirty) collect();
       document.documentElement.dataset.fluidScroll = wheelActive ? "pull" : "settle";
+      const amount = pull.position;
+      const transform = `translate3d(0,${amount}px,0) perspective(1200px) rotateX(${-amount * .025}deg) skewY(${-amount * .0105}deg) scaleY(${1 + amount * .9 / Math.max(320, innerHeight)})`;
       for (const [section, sheet] of sheets) {
-        const amount = pull.position;
         section.setAttribute("data-fluid-surface", "");
-        section.style.transform = `translate3d(0,${amount}px,0) skewY(${-amount * .0105}deg) scaleY(${1 + amount * .72 / Math.max(320, sheet.height)})`;
+        section.style.transform = transform;
         section.style.transformOrigin = `50% ${section === page ? y + innerHeight * .5 - sheet.top : innerHeight * .5}px`;
       }
       frame = requestAnimationFrame(tick);
@@ -105,7 +105,10 @@ export function useFluidScroll(): WheelMotion {
     const onNavigation = () => { ignoreUntil = performance.now() + 500; reset(); };
     const onResize = () => {
       if (innerWidth !== viewportWidth) { viewportWidth = innerWidth; onNavigation(); }
-      else reset();
+      else {
+        dirty = true;
+        if (frame || wheelActive || Math.abs(pull.position) > .08) wake();
+      }
     };
     const onPointerDown = (event: PointerEvent) => {
       if (!(event.target instanceof Element) || !event.target.closest("a,button,input,textarea,select")) { stop(); return; }

@@ -35,7 +35,10 @@ Project and credential descriptions remain readable on mobile. Reduced motion
 exposes finished content and keeps the fast-scroll feedback without spatial effects.
 
 The separate fluid-scroll layer gives ordinary wheel input a critically damped
-page-pull, with a bounded stretch/shear of the entire content page. Text, images,
+page-pull, with viewport-relative stretch, tilt and shear of the entire content page.
+Deformation is deliberately based on the viewport, not the full document height,
+so it remains visible on long pages. A natural-flow clipping boundary prevents
+the elastic paint from changing the page's actual scroll range. Text, images,
 cards, forms and their buttons share one field, including during content assembly.
 Construction overlays use the same transform in viewport coordinates; natural
 geometry is remeasured after settling. Fixed navigation, dialogs and floating
@@ -43,6 +46,8 @@ controls remain stable. It settles
 back to the exact original geometry, sleeps when idle and yields immediately to
 the original fast-scroll reversal, links, keyboard, forms and image dialogs.
 Touch keeps the original gesture rules and gains the same visual drag response.
+Height-only mobile toolbar changes preserve the active water response rather than
+resetting it between touch steps.
 Reduced motion keeps spatial
 drag disabled. Remove `useFluidScroll` from `AdaptiveBrowsing` to disable only
 this layer without removing content animation or the fast-scroll messages.

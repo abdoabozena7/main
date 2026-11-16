@@ -1,3 +1,8 @@
+.fluid-page-boundary {
+  overflow: hidden;
+  overflow: clip;
+}
+
 html body [data-fluid-surface] {
   will-change: transform;
   transition-property: box-shadow, background-color, color, border-color;

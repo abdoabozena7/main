@@ -53,6 +53,7 @@ try {
       }));
       const initialHero = await sampleHero();
       await page.waitForTimeout(3200);
+      await page.evaluate(() => document.fonts.ready);
       const settledHero = await sampleHero();
       check(`${width}: opening profile never enters worker construction`,
         initialHero.workshops === 0 && settledHero.workshops === 0 &&
@@ -70,7 +71,9 @@ try {
       await page.waitForFunction(() => !document.documentElement.hasAttribute("data-fluid-scroll"));
       await page.mouse.move(width - 12, height * .8);
       await page.waitForFunction(() => getComputedStyle(document.querySelector('[data-project="hivo"]')).transform === "none");
-      const before = await page.locator('[data-project="hivo"]').evaluate(card => ({ y: scrollY, top: card.getBoundingClientRect().top }));
+      const before = await page.locator('[data-project="hivo"]').evaluate(card => ({
+        y: scrollY, top: card.getBoundingClientRect().top, pageHeight: document.documentElement.scrollHeight,
+      }));
       const collect = async () => {
         await page.evaluate(() => {
           window.fluidFrames = [];
@@ -85,6 +88,7 @@ try {
               mode: document.documentElement.dataset.fluidScroll || null,
               ty: matrix.m42, scale: matrix.m22, shear: matrix.m12,
               rawPull: matrix.m42,
+              pageHeight: document.documentElement.scrollHeight,
               transitions: getComputedStyle(sheet).transitionProperty,
             });
             if (now - start < 2300) requestAnimationFrame(sample);
@@ -94,7 +98,10 @@ try {
         });
       };
       const objectSelectors = ["#projects > h2", '[data-project="hivo"] .project-description', '[data-project="hivo"] img', '[data-project="hivo"] .project-actions button'];
-      const objectsBefore = await page.evaluate(selectors => selectors.map(selector => document.querySelector(selector).getBoundingClientRect().top), objectSelectors);
+      const objectsBefore = await page.evaluate(selectors => selectors.map(selector => {
+        const rect = document.querySelector(selector).getBoundingClientRect();
+        return { top: rect.top, height: rect.height };
+      }), objectSelectors);
       await collect();
       await page.mouse.wheel(0, 120);
       await page.waitForTimeout(180);
@@ -104,7 +111,8 @@ try {
         return {
           covered: selectors.map((selector, index) => {
             const node = document.querySelector(selector);
-            return { selector, inPage: page.contains(node), displacement: node.getBoundingClientRect().top - tops[index] + scrollY - y };
+            const rect = node.getBoundingClientRect();
+            return { selector, inPage: page.contains(node), displacement: rect.top - tops[index].top + scrollY - y, heightRatio: rect.height / tops[index].height };
           }),
           pageTransform: getComputedStyle(page).transform,
           overlayTransform: getComputedStyle(overlay).transform,
@@ -114,6 +122,8 @@ try {
       check(`${width}: whole page content and construction share the same fluid field`,
         globalPose.covered.every(object => object.inPage && Math.abs(object.displacement) > 5) &&
         globalPose.pageTransform === globalPose.overlayTransform && globalPose.activeLayers === 2, globalPose);
+      check(`${width}: actual visible image geometry stretches, not only its container matrix`,
+        globalPose.covered[2].heightRatio > 1.02 && globalPose.covered.every(object => object.heightRatio < 1.15), globalPose.covered);
       await page.screenshot({ path: path.join(out, `${width}-page-pull.png`) });
       await page.waitForFunction(() => window.fluidDone);
       const frames = await page.evaluate(() => window.fluidFrames);
@@ -123,7 +133,10 @@ try {
       check(`${width}: wheel input progresses through real intermediate positions`, intermediate.size >= 4, { positions: intermediate.size, from: before.y, to: frames.at(-1).y });
       check(`${width}: content bends and pulls rather than only smooth-scrolling`,
         Math.abs(peak.ty) >= 25 && Math.abs(peak.ty) <= 44 &&
-        Math.abs(peak.shear) > .0001 && Math.abs(peak.scale - 1) > .0005, peak);
+        Math.abs(peak.shear) > .0001 && peak.scale > 1.018 && peak.scale < 1.06, peak);
+      check(`${width}: visible deformation never inflates the native page bounds`,
+        frames.every(frame => Math.abs(frame.pageHeight - before.pageHeight) <= 1),
+        { before: before.pageHeight, maximum: Math.max(...frames.map(frame => frame.pageHeight)) });
       const after = await page.locator('[data-project="hivo"]').evaluate(card => ({
         y: scrollY, top: card.getBoundingClientRect().top, transform: getComputedStyle(document.querySelector("[data-fluid-page]")).transform,
         active: document.querySelectorAll("[data-fluid-surface]").length,
@@ -163,6 +176,12 @@ try {
         for (let step = 1; step <= 8; step++) {
           await page.waitForTimeout(80);
           await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 375, y: 680 - step * 20 }] });
+          if (step === 4) {
+            const active = await page.evaluate(() => document.documentElement.hasAttribute("data-fluid-scroll"));
+            await page.setViewportSize({ width, height: height - 70 });
+            check("390: browser toolbar resizing preserves the visible water response", active &&
+              await page.evaluate(() => document.documentElement.hasAttribute("data-fluid-scroll")));
+          }
         }
         await page.screenshot({ path: path.join(out, "390-touch-drag.png") });
         await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
@@ -170,6 +189,8 @@ try {
         const touchFrames = await page.evaluate(() => window.fluidFrames);
         check("390: gentle touch visibly drags the page while held", touchFrames.some(frame => frame.at < 850 && Math.abs(frame.ty) > 2), touchFrames.filter(frame => Math.abs(frame.ty) > 2).length);
         await writeFile(path.join(out, "390-touch-frames.json"), JSON.stringify(touchFrames));
+        await page.setViewportSize({ width, height });
+        await page.waitForFunction(() => !document.documentElement.hasAttribute("data-fluid-scroll"));
         await page.mouse.wheel(0, 80);
         await page.waitForTimeout(120);
         const zoom = page.getByRole("button", { name: "Zoom in Hivo Studio", exact: true });
