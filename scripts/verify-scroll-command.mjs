@@ -31,7 +31,8 @@ try{
   check('Spaced wheel steps remain native and downward',paced.y>spaced.y+350&&paced.commands.length===spaced.commands.length,{spaced,paced});
   await page.evaluate(()=>{const area=document.createElement('div');area.id='nested-scroll-test';area.style.cssText='position:fixed;inset:100px auto auto 100px;z-index:9999;width:220px;height:170px;overflow-y:auto;background:white';const content=document.createElement('div');content.style.height='900px';area.append(content);document.body.append(area)});
   const nestedStart=await snapshot(page);await page.mouse.move(160,160);await page.mouse.wheel(0,500);await page.waitForTimeout(180);
-  check('A strong wheel in a nested scroller stays inside that scroller',await page.locator('#nested-scroll-test').evaluate(el=>el.scrollTop)>350&&Math.abs((await snapshot(page)).y-nestedStart.y)<3);
+  const nestedResult={scrollTop:await page.locator('#nested-scroll-test').evaluate(el=>el.scrollTop),from:nestedStart.y,to:(await snapshot(page)).y};
+  check('A strong wheel in a nested scroller stays inside that scroller',nestedResult.scrollTop>350&&Math.abs(nestedResult.to-nestedResult.from)<3,nestedResult);
   await page.locator('#nested-scroll-test').evaluate(el=>el.remove());
   const textarea=page.locator('#contact textarea');await textarea.fill('command verification');await position(page);await page.mouse.move(1200,600);const editStart=await snapshot(page);await page.mouse.wheel(0,500);await page.waitForTimeout(150);check('Focused form control exempts even a strong command',(await snapshot(page)).y>editStart.y+350&&await textarea.inputValue()==='command verification');
  }finally{await context.close()}}

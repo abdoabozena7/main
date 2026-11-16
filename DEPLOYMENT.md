@@ -2,6 +2,16 @@
 
 Public URL: https://abdoabozena7.github.io/main/
 
+The latest correction starts scroll protection before the renderer download,
+handles visible WebViews without reliable focus, and preserves held gestures
+during toolbar-height changes. Immediate viewport highlighting is separate from
+earned exposure, so Experience colors/outlines respond without waiting for the
+reading score. Fluid motion applies to the whole content page and its construction
+overlay, not a whitelist of objects. Navigation/dialog controls remain stable.
+Run `test:startup`, `test:in-app` and `test:viewport` alongside the motion/browsing
+checks below. Embedded conditions are simulated; actual Instagram/TikTok devices
+are not certified by these tests.
+
 The opening profile renders complete from first paint on desktop and mobile;
 the worker/name-building animation is excluded from the hero entirely.
 This correction preserves below-fold content animation, adaptive browsing,

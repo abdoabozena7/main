@@ -2,18 +2,18 @@ import { useLayoutEffect, useMemo, useRef } from "react";
 import { stepFluidMotion, type FluidState, type WheelMotion } from "@/lib/fluidScroll";
 import "@/styles/fluid-scroll.css";
 
-type Sheet = { top: number; height: number; weight: number };
-const properties = ["--fluid-pull", "--fluid-shear", "--fluid-stretch", "--fluid-origin"];
+type Sheet = { top: number; height: number };
+const properties = ["transform", "transform-origin"];
 const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit, value));
 
 export function useFluidScroll(): WheelMotion {
   const engine = useRef<WheelMotion | null>(null);
   useLayoutEffect(() => {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
-    const surfaces = [...document.querySelectorAll<HTMLElement>(
-      "#hero > .text-center, section > h2, #about > div, [data-scan-item], [data-project], #contact form, .finale-content, .finale-footer",
-    )];
-    const visible = new Set<HTMLElement>();
+    const page = document.querySelector<HTMLElement>("[data-fluid-page]");
+    if (!page) { console.error("Fluid page wrapper is missing"); return; }
+    const overlay = document.querySelector<HTMLElement>("[data-content-construction]");
+    const surfaces = overlay ? [page, overlay] : [page];
     const sheets = new Map<HTMLElement, Sheet>();
     let frame = 0, lastAt = 0, lastY = scrollY, target = scrollY, ignoreUntil = 0;
     let wheelActive = false, held = false, dirty = true;
@@ -49,12 +49,8 @@ export function useFluidScroll(): WheelMotion {
       reset();
     };
     const collect = () => {
-      for (const section of visible) {
-        if (sheets.has(section) || section.closest("[data-building],[data-scene-building]") ||
-          section.querySelector("[data-building],[data-scene-building]")) continue;
-        const box = section.getBoundingClientRect();
-        sheets.set(section, { top: box.top + scrollY, height: box.height, weight: .85 + surfaces.indexOf(section) % 3 * .075 });
-      }
+      const height = page.offsetHeight;
+      for (const surface of surfaces) sheets.set(surface, { top: surface === page ? page.offsetTop : 0, height });
       dirty = false;
     };
     const tick = (now: number) => {
@@ -77,16 +73,10 @@ export function useFluidScroll(): WheelMotion {
       if (dirty) collect();
       document.documentElement.dataset.fluidScroll = wheelActive ? "pull" : "settle";
       for (const [section, sheet] of sheets) {
-        if (!visible.has(section) || section.closest("[data-building],[data-scene-building]") ||
-          section.querySelector("[data-building],[data-scene-building]")) {
-          clearSheet(section); sheets.delete(section); continue;
-        }
-        const amount = pull.position * sheet.weight;
+        const amount = pull.position;
         section.setAttribute("data-fluid-surface", "");
-        section.style.setProperty("--fluid-pull", `${amount}px`);
-        section.style.setProperty("--fluid-shear", `${-amount * .0105}deg`);
-        section.style.setProperty("--fluid-stretch", String(1 + amount * .72 / Math.max(320, sheet.height)));
-        section.style.setProperty("--fluid-origin", `${Math.max(0, Math.min(sheet.height, y + innerHeight * .5 - sheet.top))}px`);
+        section.style.transform = `translate3d(0,${amount}px,0) skewY(${-amount * .0105}deg) scaleY(${1 + amount * .72 / Math.max(320, sheet.height)})`;
+        section.style.transformOrigin = `50% ${section === page ? y + innerHeight * .5 - sheet.top : innerHeight * .5}px`;
       }
       frame = requestAnimationFrame(tick);
     };
@@ -107,14 +97,6 @@ export function useFluidScroll(): WheelMotion {
       },
       stop,
     };
-    const observer = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        const section = entry.target as HTMLElement;
-        if (entry.isIntersecting) visible.add(section); else visible.delete(section);
-      }
-      dirty = true;
-    }, { rootMargin: "100px 0px" });
-    surfaces.forEach(surface => observer.observe(surface));
     const onScroll = () => {
       if (held || blocked() || performance.now() < ignoreUntil) { lastY = scrollY; return; }
       if (!wheelActive && Math.abs(scrollY - lastY) > innerHeight * .45) { reset(); return; }
@@ -153,7 +135,7 @@ export function useFluidScroll(): WheelMotion {
     document.addEventListener("click", release, true); document.addEventListener("focusin", onFocus, true);
     document.addEventListener("visibilitychange", release); reduced.addEventListener("change", release);
     return () => {
-      engine.current = null; observer.disconnect(); clearTimeout(releaseTimer); reset();
+      engine.current = null; clearTimeout(releaseTimer); reset();
       window.removeEventListener("scroll", onScroll);
       window.removeEventListener("keydown", onNavigation, true);
       window.removeEventListener("hashchange", onNavigation); window.removeEventListener("popstate", onNavigation);

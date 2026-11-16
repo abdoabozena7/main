@@ -1,4 +1,5 @@
-/* The loader traces the logo frame as exploration progresses. */
+/* Immediate location feedback is independent of the visit's earned score. */
+[data-viewport-active] { --viewport-evidence: 1; }
 [data-experience-item] .experience-brand .company-logo {
   position: relative;
   top: auto;
@@ -10,7 +11,7 @@
   [data-experience-item] .company-logo > img {
     /* Keep this dimming inside the paint effect. Actual element opacity and
        its ancestors still determine whether the image can earn exposure. */
-    filter: grayscale(calc(1 - var(--exploration-evidence, 0))) opacity(calc(.5 + .5 * var(--exploration-evidence, 0)));
+    filter: grayscale(calc(1 - max(var(--exploration-evidence, 0), var(--viewport-evidence, 0)))) opacity(calc(.5 + .5 * max(var(--exploration-evidence, 0), var(--viewport-evidence, 0))));
     transition: filter .24s linear;
   }
 }
@@ -32,7 +33,7 @@
 .company-evidence-progress {
   stroke: var(--accent, var(--accent-teal));
   stroke-dasharray: 1;
-  stroke-dashoffset: calc(1 - var(--exploration-evidence, 0));
+  stroke-dashoffset: calc(1 - max(var(--exploration-evidence, 0), var(--viewport-evidence, 0)));
   transition: stroke-dashoffset .24s linear;
 }
 @media screen and (max-width: 767px) {
@@ -58,7 +59,7 @@
   initial-value: 0%;
 }
 .credential-evidence {
-  --credential-fill: calc(var(--exploration-evidence, 0) * 100%);
+  --credential-fill: calc(max(var(--exploration-evidence, 0), var(--viewport-evidence, 0)) * 100%);
   --credential-ink: var(--accent, var(--accent-teal));
   --credential-track: color-mix(in srgb, var(--credential-ink) 30%, transparent);
   border-left-color: var(--credential-ink);
@@ -69,7 +70,7 @@
 .credential-evidence[data-scene-shell] { border-image: none; }
 .credential-evidence .certificate-image-trigger::after {
   /* Trace the exposed right side of the offset shadow, then turn left at the foot. */
-  --credential-fill: calc(var(--exploration-evidence, 0) * 100%);
+  --credential-fill: calc(max(var(--exploration-evidence, 0), var(--viewport-evidence, 0)) * 100%);
   transition: --credential-fill .24s linear;
   --shadow-side: clamp(0%, calc(var(--credential-fill) / .6), 100%);
   --shadow-foot: clamp(0%, calc((var(--credential-fill) - 60%) / .4), 100%);
@@ -89,7 +90,7 @@
     transition: --credential-fill .24s linear;
   }
   .project-card::after {
-    --credential-fill: calc(var(--exploration-evidence, 0) * 100%);
+    --credential-fill: calc(max(var(--exploration-evidence, 0), var(--viewport-evidence, 0)) * 100%);
     transition: --credential-fill .24s linear;
     --shadow-side: clamp(0%, calc(var(--credential-fill) / .6), 100%);
     --shadow-foot: clamp(0%, calc((var(--credential-fill) - 60%) / .4), 100%);

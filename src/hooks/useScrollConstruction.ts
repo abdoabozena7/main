@@ -469,12 +469,14 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       if (work.some(t => t.progress < 1) || lowerWork || overlayWork.active) schedule();
     };
     const syncDirector = () => {
+      if (document.documentElement.hasAttribute("data-fluid-scroll")) { directorJump = true; return; }
       const enabled = !mobileRegistry && !reduced.matches;
       if (director) { director.configure(enabled); return; }
       if (!enabled || loadingDirector) return;
       loadingDirector = true;
       void import("@/lib/constructionDirector").then(({ createConstructionDirector }) => {
         if (stopped || mobileRegistry || reduced.matches) return;
+        if (document.documentElement.hasAttribute("data-fluid-scroll")) { directorJump = true; return; }
         director = createConstructionDirector({ layer, sections, pointers: cursors, guides, carets, pointersVisible, enabled: true, wake: schedule });
         if (directorJump) director.jump();
         if (reflowing) director.pause();

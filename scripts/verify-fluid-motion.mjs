@@ -76,18 +76,16 @@ try {
           window.fluidFrames = [];
           window.fluidDone = false;
           const card = document.querySelector('[data-project="hivo"]');
-          const title = document.querySelector("#projects > h2");
+          const sheet = document.querySelector("[data-fluid-page]");
           const start = performance.now();
           const sample = now => {
-            const matrix = new DOMMatrixReadOnly(getComputedStyle(card).transform);
-            const titleMatrix = new DOMMatrixReadOnly(getComputedStyle(title).transform);
+            const matrix = new DOMMatrixReadOnly(getComputedStyle(sheet).transform);
             window.fluidFrames.push({
               at: now - start, y: scrollY, top: card.getBoundingClientRect().top,
               mode: document.documentElement.dataset.fluidScroll || null,
               ty: matrix.m42, scale: matrix.m22, shear: matrix.m12,
-              titlePull: titleMatrix.m42,
-              rawPull: parseFloat(card.style.getPropertyValue("--fluid-pull")) || 0,
-              transitions: getComputedStyle(card).transitionProperty,
+              rawPull: matrix.m42,
+              transitions: getComputedStyle(sheet).transitionProperty,
             });
             if (now - start < 2300) requestAnimationFrame(sample);
             else window.fluidDone = true;
@@ -95,9 +93,27 @@ try {
           requestAnimationFrame(sample);
         });
       };
+      const objectSelectors = ["#projects > h2", '[data-project="hivo"] .project-description', '[data-project="hivo"] img', '[data-project="hivo"] .project-actions button'];
+      const objectsBefore = await page.evaluate(selectors => selectors.map(selector => document.querySelector(selector).getBoundingClientRect().top), objectSelectors);
       await collect();
       await page.mouse.wheel(0, 120);
       await page.waitForTimeout(180);
+      const globalPose = await page.evaluate(({ selectors, tops, y }) => {
+        const page = document.querySelector("[data-fluid-page]");
+        const overlay = document.querySelector("[data-content-construction]");
+        return {
+          covered: selectors.map((selector, index) => {
+            const node = document.querySelector(selector);
+            return { selector, inPage: page.contains(node), displacement: node.getBoundingClientRect().top - tops[index] + scrollY - y };
+          }),
+          pageTransform: getComputedStyle(page).transform,
+          overlayTransform: getComputedStyle(overlay).transform,
+          activeLayers: document.querySelectorAll("[data-fluid-surface]").length,
+        };
+      }, { selectors: objectSelectors, tops: objectsBefore, y: before.y });
+      check(`${width}: whole page content and construction share the same fluid field`,
+        globalPose.covered.every(object => object.inPage && Math.abs(object.displacement) > 5) &&
+        globalPose.pageTransform === globalPose.overlayTransform && globalPose.activeLayers === 2, globalPose);
       await page.screenshot({ path: path.join(out, `${width}-page-pull.png`) });
       await page.waitForFunction(() => window.fluidDone);
       const frames = await page.evaluate(() => window.fluidFrames);
@@ -107,9 +123,9 @@ try {
       check(`${width}: wheel input progresses through real intermediate positions`, intermediate.size >= 4, { positions: intermediate.size, from: before.y, to: frames.at(-1).y });
       check(`${width}: content bends and pulls rather than only smooth-scrolling`,
         Math.abs(peak.ty) >= 25 && Math.abs(peak.ty) <= 44 &&
-        Math.abs(peak.shear) > .0001 && Math.abs(peak.scale - 1) > .001, peak);
+        Math.abs(peak.shear) > .0001 && Math.abs(peak.scale - 1) > .0005, peak);
       const after = await page.locator('[data-project="hivo"]').evaluate(card => ({
-        y: scrollY, top: card.getBoundingClientRect().top, transform: getComputedStyle(card).transform,
+        y: scrollY, top: card.getBoundingClientRect().top, transform: getComputedStyle(document.querySelector("[data-fluid-page]")).transform,
         active: document.querySelectorAll("[data-fluid-surface]").length,
       }));
       check(`${width}: settling restores exact geometry and full input distance`,

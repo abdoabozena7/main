@@ -173,7 +173,7 @@ export function createConstructionDirector(options: DirectorOptions) {
   }
 
   function measure() {
-    if (!enabled) return;
+    if (!enabled || document.documentElement.hasAttribute("data-fluid-scroll")) return;
     for (const scene of scenes) {
       for (const u of scene.units) {
         u.box = readBox(u.root);

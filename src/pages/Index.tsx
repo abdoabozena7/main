@@ -19,14 +19,16 @@ const Index = () => {
       <Navbar />
       <ScrollToTop />
       <Terminal />
-      <HeroSection />
-      <AboutSection />
-      <ExperienceSection />
-      <EducationSection />
-      <HonorsSection />
-      <ProjectsSection />
-      <ContactSection />
-      <Finale />
+      <main data-fluid-page>
+        <HeroSection />
+        <AboutSection />
+        <ExperienceSection />
+        <EducationSection />
+        <HonorsSection />
+        <ProjectsSection />
+        <ContactSection />
+        <Finale />
+      </main>
       <AdaptiveBrowsing />
       <ContentConstruction />
     </div>

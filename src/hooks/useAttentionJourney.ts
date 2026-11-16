@@ -94,7 +94,19 @@ export function useAttentionJourney() {
     type Reads = ReturnType<typeof reads>;
     const completeSurface = (story: Story) => !story.el.closest('[data-building],[data-scene-building]') && !story.el.querySelector('[data-building],[data-scene-building]');
     const expanded = (story: Story, frame: Reads) => completeSurface(story) && frame.painted(story.el) && story.details.every(detail => !detail.inert && detail.getAttribute("aria-hidden") !== "true" && Number(frame.style(detail).opacity) >= .99);
-    const canObserve = (dialog: Element | null) => !document.hidden && document.hasFocus() && !getScrollIntent().automatic && !dialog;
+    const canObserve = (dialog: Element | null) => !document.hidden && !getScrollIntent().automatic && !dialog;
+    // Viewport presence is immediate feedback, not earned reading/exposure credit.
+    const updateViewport = (frame: Reads) => {
+      const available = !document.hidden && !document.querySelector('[role="dialog"],[data-exploration-map],nav button[aria-expanded="true"]');
+      for (const story of visible) {
+        const rect = frame.rect(story.el);
+        const height = Math.max(0, Math.min(rect.bottom, frame.height - 56) - Math.max(rect.top, 76));
+        const width = Math.max(0, Math.min(rect.right, frame.width) - Math.max(rect.left, 0));
+        const active = available && height >= Math.min(96, rect.height * .35) && height > 0 &&
+          width >= Math.min(rect.width, frame.width) * .5 && !story.el.closest('[aria-hidden="true"],[inert]');
+        story.el.toggleAttribute("data-viewport-active", active);
+      }
+    };
 
     const measureBounds = (frame: Reads) => {
       for (const story of records) {
@@ -194,11 +206,12 @@ export function useAttentionJourney() {
       const now = performance.now(), dt = Math.min(250, now - lastAt); lastAt = now;
       const frame = reads();
       const dialog = document.querySelector('[role="dialog"]');
+      updateViewport(frame);
       if (measureDirty && !regrouping) measureBounds(frame);
       if (inspection && now - inspection.started > 1000 && !dialog) inspection = null;
       if (inspection) {
         const image = dialog?.querySelector<HTMLImageElement>('img');
-        if (!document.hidden && document.hasFocus() && image?.complete && image.naturalWidth > 0 && now - inspection.started >= 600 && inspection.story.qualifiedMs >= 1000) {
+        if (!document.hidden && image?.complete && image.naturalWidth > 0 && now - inspection.started >= 600 && inspection.story.qualifiedMs >= 1000) {
           inspection.story.actions.add("inspect"); scoreStory(inspection.story, frame); inspection = null;
         }
       }
@@ -235,15 +248,16 @@ export function useAttentionJourney() {
       // An action bonus can fill the score before coverage qualifies the mark.
       if (![...visible].some(story => story.credit < 1 || story.coverage < .95) && !inspection) stopClock();
     };
-    const startClock = () => { if (!clock && !document.hidden && document.hasFocus()) { lastAt = performance.now(); clock = window.setInterval(sample, sampleIntervalMs); } };
+    const startClock = () => { if (!clock && !document.hidden) { lastAt = performance.now(); clock = window.setInterval(sample, sampleIntervalMs); } };
     const observer = new IntersectionObserver(entries => {
       entries.forEach(entry => {
         const story = storiesByElement.get(entry.target as HTMLElement); if (!story) return;
         if (entry.isIntersecting) { visible.add(story); if (story.hadLeft && getScrollIntent().userDriven && getScrollIntent().direction < 0) story.returnAt ??= story.qualifiedMs; }
-        else { if (visible.has(story) && story.encountered) story.hadLeft = true; visible.delete(story); }
+        else { if (visible.has(story) && story.encountered) story.hadLeft = true; visible.delete(story); story.el.removeAttribute("data-viewport-active"); }
       });
+      updateViewport(reads());
       if (visible.size) startClock(); else stopClock();
-    }, { rootMargin: "-76px 0px -56px 0px", threshold: [0, .25, .5, 1] });
+    }, { rootMargin: "-76px 0px -56px 0px", threshold: [0, .15, .35, .6, 1] });
     records.forEach(story => observer.observe(story.el));
     const onIntent = () => {
       const intent = getScrollIntent(), now = performance.now();
@@ -276,6 +290,7 @@ export function useAttentionJourney() {
     };
     const invalidate = () => { measureDirty = true; startClock(); };
     const click = (event: MouseEvent) => {
+      queueMicrotask(() => updateViewport(reads()));
       const target = event.target as HTMLElement;
       const control = target.closest("a,button"); if (!control) return;
       const story = records.find(story => story.el.contains(control)); if (!story) return;
@@ -287,7 +302,7 @@ export function useAttentionJourney() {
     const keyboardJump = (event: KeyboardEvent) => {
       if (["Home", "End", "PageDown", "PageUp"].includes(event.key)) suppressSweepUntil = performance.now() + 800;
     };
-    const visibility = () => { lastAt = performance.now(); if (document.hidden || !document.hasFocus()) stopClock(); else startClock(); };
+    const visibility = () => { lastAt = performance.now(); updateViewport(reads()); if (document.hidden) stopClock(); else startClock(); };
     const onLayoutStart = () => { regrouping = true; };
     const onLayoutSettled = () => { regrouping = false; invalidate(); };
     const activityReady = () => { const story = records.find(record => record.el.matches('[data-construction-scene="activity"]')); if (story) story.blocks = makeBlocks(story.el, story.heading); invalidate(); };
@@ -307,7 +322,7 @@ export function useAttentionJourney() {
       window.removeEventListener("portfolio:fluid-settled", invalidate);
       document.fonts.removeEventListener("loadingdone", invalidate);
       document.removeEventListener("click", click, true); document.removeEventListener("visibilitychange", visibility); window.removeEventListener("focus", visibility); window.removeEventListener("blur", visibility);
-      records.forEach(story => { delete story.el.dataset.discoveryId; delete story.el.dataset.quality; delete story.el.dataset.qualityCoverage; delete story.el.dataset.qualityEncountered; delete story.el.dataset.qualityConfidence; delete story.el.dataset.explorationComplete; story.el.style.removeProperty("--exploration-evidence"); }); resetExploration();
+      records.forEach(story => { delete story.el.dataset.discoveryId; delete story.el.dataset.quality; delete story.el.dataset.qualityCoverage; delete story.el.dataset.qualityEncountered; delete story.el.dataset.qualityConfidence; delete story.el.dataset.explorationComplete; story.el.removeAttribute("data-viewport-active"); story.el.style.removeProperty("--exploration-evidence"); }); resetExploration();
     };
   }, []);
 }

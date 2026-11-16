@@ -25,15 +25,25 @@ The construction clock keeps hidden worker slots for content placement, but does
 not render cursor SVGs or run pointer travel, helpers or parking animations.
 
 The optional visit-local score remains mounted once, independently of navigation.
+Visible regions receive `data-viewport-active` feedback immediately from their
+current viewport rectangles, including in visible embedded browsers that report
+`hasFocus() === false`. Company colors/outlines no longer wait for reading credit.
+Exposure/score and completion stamps still use the original dwell/coverage rules;
+hidden pages earn no credit. `npm run test:viewport` covers entry/exit, prompt
+Experience feedback and the separation between highlighting and earned exposure.
 Project and credential descriptions remain readable on mobile. Reduced motion
 exposes finished content and keeps the fast-scroll feedback without spatial effects.
 
 The separate fluid-scroll layer gives ordinary wheel input a critically damped
-page-pull, with a bounded stretch/shear of completed visible content blocks. It settles
+page-pull, with a bounded stretch/shear of the entire content page. Text, images,
+cards, forms and their buttons share one field, including during content assembly.
+Construction overlays use the same transform in viewport coordinates; natural
+geometry is remeasured after settling. Fixed navigation, dialogs and floating
+controls remain stable. It settles
 back to the exact original geometry, sleeps when idle and yields immediately to
 the original fast-scroll reversal, links, keyboard, forms and image dialogs.
 Touch keeps the original gesture rules and gains the same visual drag response.
-Content still being assembled is not distorted. Reduced motion keeps spatial
+Reduced motion keeps spatial
 drag disabled. Remove `useFluidScroll` from `AdaptiveBrowsing` to disable only
 this layer without removing content animation or the fast-scroll messages.
 The stronger pull is bounded to 40px, with modest additional stretch/shear; input
