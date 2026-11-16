@@ -10,6 +10,7 @@ const url = process.env.PORTFOLIO_URL || "http://127.0.0.1:8080/main/";
 const out = process.env.PROVE_IT_OUTPUT_DIR || path.join("output", "playwright", "fluid-motion");
 await mkdir(out, { recursive: true });
 const sources = [
+  "src/main.tsx", "src/renderApp.tsx", "src/lib/scrollGuard.ts",
   "src/pages/Index.tsx", "src/components/AdaptiveBrowsing.tsx", "src/components/AgentConstruction.tsx",
   "src/hooks/useFluidScroll.ts", "src/hooks/useFastScrollReturn.ts", "src/hooks/useScrollConstruction.ts",
   "src/hooks/useAttentionJourney.ts", "src/lib/fluidScroll.ts", "src/lib/constructionDirector.ts",

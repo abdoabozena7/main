@@ -12,6 +12,7 @@
     "test": "vitest run",
     "test:lightweight": "node scripts/verify-lightweight-browsing.mjs",
     "test:motion": "node scripts/verify-fluid-motion.mjs",
+    "test:startup": "node scripts/verify-scroll-startup.mjs",
     "test:watch": "vitest",
     "test:construction": "node scripts/verify-construction.mjs",
     "test:construction:review": "node scripts/verify-fluid-browsing.mjs",

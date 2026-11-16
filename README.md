@@ -6,6 +6,13 @@ GitHub Pages publishes pushes to `main` through
 
 The opening profile (name, badge, tags and buttons) renders complete immediately
 on desktop and mobile, without any worker/name-building sequence.
+The speed guard starts in a small React-independent entry before the portfolio
+renderer is downloaded. Fluid input binds during the first layout commit, without
+waiting for images, fonts or passive effects. The original speed thresholds and
+gesture exemptions are shared by early startup and the mounted page.
+`npm run test:startup` tests the production preview (default port 4182) with the
+real renderer deliberately held back, throttled CPU/network, and first wheel/touch
+gestures. It also checks one guard instance and fluid readiness at first paint.
 This release retains below-fold content assembly, adaptive browsing
 and the original fast-scroll resistance/"Slow Down" messages. Only the moving
 cursor actors, custom mouse pointer and hero agent illustration stay removed.

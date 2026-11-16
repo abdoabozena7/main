@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef } from "react";
+import { useLayoutEffect, useMemo, useRef } from "react";
 import { stepFluidMotion, type FluidState, type WheelMotion } from "@/lib/fluidScroll";
 import "@/styles/fluid-scroll.css";
 
@@ -8,7 +8,7 @@ const clamp = (value: number, limit: number) => Math.max(-limit, Math.min(limit,
 
 export function useFluidScroll(): WheelMotion {
   const engine = useRef<WheelMotion | null>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const reduced = matchMedia("(prefers-reduced-motion: reduce)");
     const surfaces = [...document.querySelectorAll<HTMLElement>(
       "#hero > .text-center, section > h2, #about > div, [data-scan-item], [data-project], #contact form, .finale-content, .finale-footer",

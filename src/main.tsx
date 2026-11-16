@@ -1,13 +1,8 @@
-import { createRoot } from "react-dom/client";
-import { startTransition } from "react";
-import App from "./App.tsx";
-import "./index.css";
+import { startScrollGuard } from "./lib/scrollGuard";
 
-const root = createRoot(document.getElementById("root")!);
-const render = () => root.render(<App />);
-if (matchMedia("(pointer: coarse), (max-width: 767px)").matches) {
-  // Let React yield during construction of the initial tree on touch devices.
-  startTransition(render);
-} else {
-  render();
-}
+startScrollGuard();
+void import("./renderApp").catch(error => {
+  console.error("Unable to load the portfolio", error);
+  const root = document.getElementById("root");
+  if (root) root.textContent = "The portfolio could not load. Please reload the page to try again.";
+});
