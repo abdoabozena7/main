@@ -7,10 +7,11 @@ import HonorsSection from "@/components/HonorsSection";
 import ExperienceSection from "@/components/ExperienceSection";
 import ProjectsSection from "@/components/ProjectsSection";
 import ContactSection from "@/components/ContactSection";
-import ScrollToTop from "@/components/ScrollToTop";
 import Terminal from "@/components/Terminal";
 import Finale from "@/components/Finale";
+import WorkshopSection from "@/components/WorkshopSection";
 import "@/styles/palette.css";
+import "@/styles/portfolio.css";
 
 const Index = () => {
   useEffect(() => {
@@ -34,16 +35,16 @@ const Index = () => {
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
-      <ScrollToTop />
-      <Terminal />
       <HeroSection />
-      <AboutSection />
-      <ExperienceSection />
-      <EducationSection />
-      <HonorsSection />
       <ProjectsSection />
+      <WorkshopSection />
+      <ExperienceSection />
+      <HonorsSection />
+      <EducationSection />
+      <AboutSection />
       <ContactSection />
       <Finale />
+      <Terminal />
     </div>
   );
 };

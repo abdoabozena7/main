@@ -36,7 +36,7 @@ const CredentialList = ({ items, group }: CredentialListProps) => (
               <button data-construction="asset" data-scan-detail className="certificate-image-trigger" aria-label={`Zoom in ${item.degree} ${item.achievement ? "photo" : "certificate"}`}>
                 <ResponsiveThumbnail
                   path={item.image}
-                  sizes="(min-width: 768px) 188px, (min-width: 640px) calc(100vw - 86px), calc(100vw - 78px)"
+                  sizes="(min-width: 768px) 188px, 88px"
                   alt={item.imageAlt}
                   className="certificate-thumb"
                   width={item.imageWidth}

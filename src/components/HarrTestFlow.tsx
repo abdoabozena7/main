@@ -1,15 +1,18 @@
-/** Native SVG flowchart; the decorative agent layer builds its measured nodes. */
-const HarrTestFlow = () => (
-  <svg className="harrtest-flow" viewBox="0 0 300 150" role="img" aria-labelledby="harrtest-flow-title harrtest-flow-description">
-    <title id="harrtest-flow-title">HarrTest evidence loop</title>
-    <desc id="harrtest-flow-description">Plan, Build, Run, Observe, Verify. If verification fails, repair and run again.</desc>
+import { useId } from "react";
+
+const HarrTestFlow = () => {
+  const id = useId();
+  return (
+  <svg className="harrtest-flow" viewBox="0 0 300 150" role="img" aria-labelledby={`${id}-title ${id}-description`}>
+    <title id={`${id}-title`}>HarrTest evidence loop</title>
+    <desc id={`${id}-description`}>Plan, Build, Run, Observe, Verify. If verification fails, repair and run again.</desc>
     <defs>
-      <marker id="harrtest-arrow" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+      <marker id={`${id}-arrow`} viewBox="0 0 6 6" refX="5" refY="3" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
         <path d="M 0 0 L 6 3 L 0 6 z" fill="currentColor" />
       </marker>
     </defs>
     <text x="18" y="18" fontSize="9" letterSpacing="1.2" opacity=".5">THE EVIDENCE LOOP</text>
-    <g fill="none" stroke="currentColor" strokeWidth="1" markerEnd="url(#harrtest-arrow)">
+    <g fill="none" stroke="currentColor" strokeWidth="1" markerEnd={`url(#${id}-arrow)`}>
       <path d="M 88 47 H 112" />
       <path d="M 183 47 H 207" />
       <path d="M 243 62 V 96 H 220" />
@@ -31,6 +34,7 @@ const HarrTestFlow = () => (
     ))}
     <text x="282" y="141" fontSize="8" textAnchor="end" opacity=".55">if it fails: repair, then run again</text>
   </svg>
-);
+  );
+};
 
 export default HarrTestFlow;

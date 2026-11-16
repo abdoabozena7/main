@@ -1,4 +1,19 @@
-/* The desktop contact and finale keep their original utilities and geometry. */
+.contact-brief-intro > p { margin-top: 12px; font-size: 27px; font-weight: 750; line-height: 1.2; letter-spacing: -.04em; }
+.contact-brief-intro > span:last-child { display: block; margin-top: 16px; max-width: 360px; color: #425052; font-size: 16px; line-height: 1.75; }
+.contact-draft-help { padding: 14px 16px; border-left: 3px solid #167869; background: #e7f2eb; color: #354c48; font-size: 12px; line-height: 1.7; }
+.contact-copy { display: grid; place-items: center; flex-shrink: 0; width: 44px; height: 44px; color: #354c48; border: 1px solid transparent; }
+.contact-copy:hover { border-color: #111920; background: #e7f2eb; }
+.contact-copy:focus-visible, .contact-social:focus-visible, .contact-email:focus-visible { outline: 3px solid #167869; outline-offset: 3px; }
+.contact-social { display: inline-flex; align-items: center; gap: 8px; min-height: 44px; padding: 10px 12px; border: 1px solid #11192065; font: 550 11px/1.5 var(--portfolio-mono); }
+.contact-social:hover { background: #faecb6; }
+.contact-email { text-decoration: underline; text-underline-offset: 4px; }
+.contact-feedback { color: #245c53; font-size: 12px; line-height: 1.7; }
+.contact-feedback--error { color: #9f241b; }
+.finale-banner { padding: 14px 24px; background: #111920; color: white; text-align: center; font: 600 11px/1.7 var(--portfolio-mono); letter-spacing: .05em; }
+.finale.finale { padding-top: 0; }
+.finale .finale-content { padding-top: 60px; padding-bottom: 48px; }
+.finale .finale-heading { margin-bottom: 40px; }
+.finale .finale-socials { margin-bottom: 48px; }
 @media (max-width: 767px) {
   #contact { padding-top: 40px; padding-bottom: 40px; }
   #contact > h2 { margin-bottom: 24px; }
@@ -17,7 +32,9 @@
   #contact form label { top: 14px; }
   #contact form button { min-height: 48px; padding-top: 12px; padding-bottom: 12px; }
 
-  .finale { padding-top: 56px; }
+  .contact-methods .contact-method { gap: 8px; }
+  .contact-methods .contact-method > div:first-child { padding: 8px; }
+  .contact-methods .contact-method a { font-size: 12px; }
   .finale .finale-content { padding-top: 40px; padding-bottom: 32px; }
   .finale .finale-heading { margin-bottom: 32px; }
   .finale .finale-socials { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; margin-bottom: 32px; }

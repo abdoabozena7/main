@@ -1,62 +1,41 @@
-import { training, experiences, companyLogos } from "@/data/profileContent";
+import { training, experiences, companyLogos, type ExperienceItem } from "@/data/profileContent";
 import SectionBlock from "./SectionBlock";
-import CompanyEvidence from "./CompanyEvidence";
 
-
+function Timeline({ items }: { items: ExperienceItem[] }) {
+  return (
+    <div className="experience-list">
+      {items.map(item => (
+        <article key={`${item.company}-${item.role}`} className="experience-item">
+          <div className="experience-brand">
+            <div className="company-logo">
+              {companyLogos[item.company]
+                ? <img src={`${import.meta.env.BASE_URL}${companyLogos[item.company].image}`} alt="" loading="lazy" decoding="async" width="48" height="48" />
+                : <span className="font-mono text-xs" aria-hidden="true">{item.company.slice(0, 2)}</span>}
+            </div>
+            <div className="experience-copy">
+              <h3 className="experience-company font-bold">{item.company}</h3>
+              <p className="experience-role">{item.role}</p>
+              <p className="experience-period">{item.period}{item.location && <span> / {item.location}</span>}</p>
+              {item.description && <p className="experience-description">{item.description}</p>}
+            </div>
+          </div>
+        </article>
+      ))}
+    </div>
+  );
+}
 
 const ExperienceSection = () => (
   <SectionBlock id="experience" title="Experience">
-    <div data-scan-group="experience" className="space-y-10">
-      <div>
-        <h3 className="font-mono text-xs uppercase tracking-[0.2em] mb-8 text-black/40">
-          Professional Experience
-        </h3>
-        <Timeline items={experiences} />
-      </div>
-
-      <div>
-        <h3 className="font-mono text-xs uppercase tracking-[0.2em] mb-8 text-black/40">
-          Internships & Applied Training
-        </h3>
-        <Timeline items={training} />
-      </div>
-    </div>
+    <p className="section-intro">A little context behind the work.</p>
+    <Timeline items={experiences.slice(0, 3)} />
+    <details className="portfolio-more">
+      <summary>Earlier roles & applied training</summary>
+      <Timeline items={experiences.slice(3)} />
+      <h3 className="experience-training-heading">Internships & applied training</h3>
+      <Timeline items={training} />
+    </details>
   </SectionBlock>
-);
-
-type TimelineItem = {
-  role: string;
-  company: string;
-};
-
-const Timeline = ({ items }: { items: TimelineItem[] }) => (
-  <div className="space-y-5">
-    {items.map((exp, index) => (
-      <div
-        key={`${exp.role}-${exp.company}`}
-        data-tone={index % 5}
-        data-experience-item
-        data-attention-id={exp.company === "Microsoft" ? "experience-microsoft" : undefined}
-        data-attention-critical={exp.company === "Microsoft" || undefined}
-        data-scan-item="experience"
-        className="experience-item relative pb-4 last:pb-0"
-      >
-        <div className="experience-brand">
-          <div className="company-logo" data-construction="asset">
-            {companyLogos[exp.company]
-              ? <img src={`${import.meta.env.BASE_URL}${companyLogos[exp.company].image}`} alt={`${exp.company} logo`} loading="lazy" decoding="async" width="24" height="24" />
-              : <span className="font-mono text-xs" aria-label={exp.company}>{exp.company.slice(0, 2)}</span>}
-            <CompanyEvidence variant={index} />
-          </div>
-
-          <div className="experience-copy">
-            <h3 className="experience-company font-bold">{exp.company}</h3>
-            <h4 className="experience-role font-medium text-foreground/70">{exp.role}</h4>
-          </div>
-        </div>
-      </div>
-    ))}
-  </div>
 );
 
 export default ExperienceSection;

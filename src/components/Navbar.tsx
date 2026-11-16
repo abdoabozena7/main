@@ -1,70 +1,67 @@
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 
 const links = [
+  { label: "Work", href: "#projects" },
+  { label: "The workshop", href: "#workshop" },
   { label: "About", href: "#about" },
-  { label: "Experience", href: "#experience" },
-  { label: "Education", href: "#education" },
-  { label: "Honors", href: "#honors" },
-  { label: "Projects", href: "#projects" },
-  {
-    label: "Portfolio",
-    href: "https://abdoabozena7.github.io/main/",
-  },
-  { label: "Contact", href: "#contact" },
 ];
 
 const Navbar = () => {
   const [open, setOpen] = useState(false);
+  const root = useRef<HTMLElement>(null);
+  const trigger = useRef<HTMLButtonElement>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const dismiss = (event: PointerEvent) => {
+      if (event.target instanceof Node && !root.current?.contains(event.target)) setOpen(false);
+    };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        setOpen(false);
+        trigger.current?.focus();
+      }
+    };
+    document.addEventListener("pointerdown", dismiss);
+    document.addEventListener("keydown", escape);
+    return () => {
+      document.removeEventListener("pointerdown", dismiss);
+      document.removeEventListener("keydown", escape);
+    };
+  }, [open]);
 
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 py-6 bg-background/80 backdrop-blur-sm">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="hidden lg:flex items-center justify-center gap-0">
-          {links.map((link, i) => (
-            <span key={link.href} className="flex items-center">
-              <a
-                href={link.href}
-                className="nav-link px-4 py-1"
-                target={link.href.startsWith("http") ? "_blank" : undefined}
-                rel={
-                  link.href.startsWith("http")
-                    ? "noopener noreferrer"
-                    : undefined
-                }
-              >
-                {link.label}
-              </a>
-              {i < links.length - 1 && (
-                <span className="text-foreground/20 text-xs">|</span>
-              )}
-            </span>
-          ))}
+    <nav ref={root} className="portfolio-nav" aria-label="Main navigation">
+      <div className="portfolio-nav-inner">
+        <a className="portfolio-wordmark" href="#hero" aria-label="Abdelrahman Abozena, home" onClick={() => setOpen(false)}>
+          AA<span aria-hidden="true">.</span>
+        </a>
+        <div className="portfolio-nav-desktop">
+          {links.map(link => <a key={link.href} href={link.href}>{link.label}</a>)}
         </div>
-
-        <div className="lg:hidden flex justify-center">
-          <button onClick={() => setOpen(!open)} className="nav-link" aria-expanded={open}>
+        <div className="portfolio-nav-actions">
+          <a className="nav-contact" href="#contact" onClick={() => setOpen(false)}>
+            Let's talk <ArrowUpRight size={15} aria-hidden="true" />
+          </a>
+          <button
+            ref={trigger}
+            className="portfolio-menu-button"
+            type="button"
+            aria-expanded={open}
+            aria-controls="mobile-navigation"
+            onClick={() => setOpen(value => !value)}
+          >
+            {open ? <X size={18} aria-hidden="true" /> : <Menu size={18} aria-hidden="true" />}
             {open ? "Close" : "Menu"}
           </button>
         </div>
-
         {open && (
-          <div className="lg:hidden flex flex-col items-center gap-4 mt-6">
-            {links.map((link) => (
-              <a
-                key={link.href}
-                href={link.href}
-                className="nav-link"
-                onClick={() => setOpen(false)}
-                target={link.href.startsWith("http") ? "_blank" : undefined}
-                rel={
-                  link.href.startsWith("http")
-                    ? "noopener noreferrer"
-                    : undefined
-                }
-              >
-                {link.label}
-              </a>
+          <div id="mobile-navigation" className="portfolio-nav-mobile">
+            {links.map(link => (
+              <a key={link.href} href={link.href} onClick={() => setOpen(false)}>{link.label}</a>
             ))}
+            <a href="#experience" onClick={() => setOpen(false)}>Experience & background</a>
           </div>
         )}
       </div>

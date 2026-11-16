@@ -32,6 +32,15 @@ html .palette-tag:hover, html .accent-button:hover {
 .experience-company { font-size: 38px; line-height: 1.2; overflow-wrap: anywhere; }
 .experience-role { margin-top: 6px; font-size: 19px; line-height: 1.25; overflow-wrap: anywhere; }
 .experience-item + .experience-item { border-top: 1px solid #11192016; padding-top: 16px; }
+.experience-list { display: grid; gap: 24px; }
+.experience-list .experience-item { padding-bottom: 0; }
+.experience-list .experience-brand { gap: 16px; }
+.experience-list .company-logo { width: 48px; height: 48px; flex-basis: 48px; }
+.experience-list .experience-company { font-size: 25px; line-height: 1.25; }
+.experience-list .experience-role { margin-top: 5px; font-size: 16px; line-height: 1.5; color: #425052; }
+.experience-period { margin-top: 8px; color: #536462; font: 500 10px/1.7 var(--portfolio-mono); }
+.experience-description { max-width: 620px; margin-top: 10px; font-size: 14px; line-height: 1.7; color: #425052; }
+.experience-training-heading { margin: 32px 0 24px; font: 650 12px/1.5 var(--portfolio-mono); }
 @media (max-width: 767px) { .experience-company { font-size: 30px; } }
 .credential-list { display: grid; gap: 40px; }
 .credential { min-width: 0; }
@@ -45,15 +54,24 @@ html .palette-tag:hover, html .accent-button:hover {
 .certificate-image-trigger + .credential-description { margin-top: 20px; }
 .certificate-zoom { position: absolute; right: 3px; bottom: 3px; padding: 3px; background: var(--accent-cream); border: 1px solid #111920; }
 .credential[data-achievement] { border-left-color: var(--accent-amber); }
-.achievement-ribbon { display: inline-flex; gap: 5px; align-items: center; font: bold 10px/1.3 ui-monospace, monospace; text-transform: uppercase; letter-spacing: .07em; background: var(--accent-cream); border: 1px solid #aa710e; color: #684305; padding: 4px 7px; margin-bottom: 9px; }
+.achievement-ribbon { display: inline-flex; gap: 5px; align-items: center; font: bold 10px/1.3 var(--portfolio-mono); text-transform: uppercase; letter-spacing: .07em; background: var(--accent-cream); border: 1px solid #aa710e; color: #684305; padding: 4px 7px; margin-bottom: 9px; }
 .credential-story:hover { color: #86600c; }
 .microsoft-headline { transform: translateY(var(--badge-offset, 0px)); }
 .microsoft-headline:hover { border-color: #111920; background: var(--accent-cream); }
 .microsoft-headline:focus-visible { outline: 2px solid #111920; outline-offset: 4px; }
-.microsoft-story-tip { position: fixed; z-index: 60; pointer-events: none; padding: 6px 9px; border: 1px solid #111920; box-shadow: 3px 3px 0 #111920; background: var(--accent-cream); color: #111920; font: 11px/1.2 ui-monospace, monospace; white-space: nowrap; }
+.microsoft-story-tip { position: fixed; z-index: 60; pointer-events: none; padding: 6px 9px; border: 1px solid #111920; box-shadow: 3px 3px 0 #111920; background: var(--accent-cream); color: #111920; font: 11px/1.2 var(--portfolio-mono); white-space: nowrap; }
 .microsoft-story-tip a { pointer-events: auto; }
 .microsoft-story-tip a:hover { text-decoration: underline; text-underline-offset: 3px; }
 .certificate-image-trigger:focus-visible { outline: 2px solid #111920; outline-offset: 5px; }
+@media (max-width: 767px) {
+  .credential:has(> .certificate-image-trigger) { display: grid; grid-template-columns: minmax(0, 1fr) 96px; gap: 0 16px; align-items: start; }
+  .credential:has(> .certificate-image-trigger) .credential-copy { grid-area: 1 / 1; }
+  .credential:has(> .certificate-image-trigger) .credential-description { grid-area: 2 / 1 / auto / -1; margin-top: 16px; }
+  .credential .certificate-image-trigger { grid-area: 1 / 2; display: flex; align-items: center; justify-content: center; width: 96px; height: 104px; margin: 0; padding: 3px; }
+  .credential .certificate-image-trigger img { width: auto; height: auto; max-width: 100%; max-height: 96px; }
+  .credential-copy h3 { font-size: 18px; }
+  .credential-copy .text-sm { font-size: 12px; }
+}
 @media (min-width: 768px) { .company-logo { left: auto; right: -16px; } }
 @media (min-width: 768px) {
   .credential-list { gap: 32px; }

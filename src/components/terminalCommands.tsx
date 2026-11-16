@@ -32,7 +32,7 @@ const getCommandResponse = (cmd: string): ReactNode | null => {
     case "projects":
       return (
         <div className="flex flex-col gap-1">
-          {projects.map((project, index) => <a key={project.id} href="#projects" className="text-blue-400 hover:underline">{index + 1}. {project.title}</a>)}
+          {projects.map((project, index) => <a key={project.id} href={`#project-${project.id}`} className="text-blue-400 hover:underline">{index + 1}. {project.title}</a>)}
         </div>
       );
     case "contact":

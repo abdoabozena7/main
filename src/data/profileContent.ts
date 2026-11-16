@@ -17,6 +17,8 @@ export type Project = {
   id: string; title: string; description: string; tags: string[];
   githubUrl: string; image?: string; imageAlt?: string; imageSource?: string;
   inProgress?: boolean; kind?: "skill"; source: string;
+  highlight?: string;
+  story?: { problem: string; approach: string; evidence: string };
 };
 
 export const projects: Project[] = [
@@ -29,6 +31,12 @@ export const projects: Project[] = [
     imageAlt: "Hivo Studio desktop workspace connected to a local project, with its coding prompt composer.",
     imageSource: "Owner-supplied Hivo Studio screenshot", inProgress: true,
     source: "Public README identifies Hivo Studio despite the legacy repository slug; owner confirms ongoing work.",
+    highlight: "IMPACT Hackathon / 1st place",
+    story: {
+      problem: "A big coding task can outgrow a single prompt, and cloud-model credits do not last forever.",
+      approach: "A desktop workspace that brings local models and a coordinated agent team into the same project.",
+      evidence: "Inspect the actual workspace and public source. Hivo Studio won first place at the IMPACT Hackathon.",
+    },
   },
   {
     id: "harrtest", title: "HarrTest",
@@ -36,6 +44,11 @@ export const projects: Project[] = [
     tags: ["Agent Skill", "Verification", "Open Source"],
     githubUrl: "https://github.com/abdoabozena7/HarrTest", kind: "skill", inProgress: true,
     source: "Public HarrTest README and SKILL.md: plan, build, run, observe, verify. A skill does not guarantee correctness or host enforcement.",
+    story: {
+      problem: "An agent saying 'tested' is not the same as a working application.",
+      approach: "A reusable skill built around a loop: plan, build, run, observe, and verify.",
+      evidence: "The public skill explains the verification workflow. It guides agent behavior; it does not guarantee correctness.",
+    },
   },
   {
     id: "ya-rab-ostorha", title: "YA RAB OSTORHA",

@@ -29,6 +29,11 @@ const AboutSection = () => (
             ))}
           </p>
         ))}
+        <nav className="about-proof-links" aria-label="Professional background">
+          <a href="#experience">Experience</a>
+          <a href="#honors">Recognition</a>
+          <a href="#education">Education</a>
+        </nav>
       </div>
     </div>
   </SectionBlock>

@@ -1,37 +1,52 @@
-# Current lightweight portfolio
+# Portfolio: the AI workshop experience
 
 Live URL: https://abdoabozena7.github.io/main/
 GitHub Pages publishes pushes to `main` through
 [Deploy portfolio](.github/workflows/pages.yml).
+Working on a separate feature branch does not update that deployment; publishing
+is a separate action.
 
-Stage 1 removes the autonomous hero/lower-page agent layers and animated custom
-cursor from the live route. Text and controls render immediately instead of
-waiting for construction. The native pointer, reduced-motion support, Microsoft
-story link, CV and image previews remain available. Historical animation modules
-are retained but are not imported by the active page.
+The customer-first route puts two selected projects directly after the hero.
+Other projects, older roles, and additional credentials remain available through
+native disclosures. Direct project links open the relevant disclosure, including
+after a reload.
 
-Stage 2 restores native wheel/touch scrolling at every speed. Scrolling no longer
-reverses direction, displays "Slow Down" interruptions, or automatically collapses
-and repositions cards. Project and credential descriptions are readable on mobile.
-The optional visit-local score still works, without taking control of navigation.
+The optional workshop follows an illustrative brief through a build sketch and
+real project evidence. It does not call an AI service or pretend to run tasks.
+Visitors can skip, choose steps, or replay. Advancing a step brings the scene into
+view when necessary; wheel/touch scrolling is never intercepted or reversed.
+Reduced motion shows the complete static story. The optional discovery count
+records explicit evidence selections for the two briefs, not reading or dwell
+time. It stays in memory, resets on reload, and sends nothing.
 
-Stage 3 serves the existing responsive WebP thumbnails on desktop as well as
-mobile, sized for the actual cards, certificates and portrait. Below-fold images
-remain lazy-loaded; zoom still opens the original full-resolution file, with
-the original image retained as the thumbnail fallback.
+Responsive WebP thumbnails remain lazy-loaded, with the original file as fallback.
+Project previews open the full-resolution original and offer native, scrollable
+full-size inspection. The Microsoft story, CV download, and scripted terminal are
+preserved. The terminal is an optional footer action on mobile rather than a
+floating control over the content; Ctrl+K also opens it.
+
+The contact form opens an email-app draft for the visitor to review and send.
+There is no message-delivery backend. Direct email and a copy-address action are
+available, including visible feedback if copying is denied.
 
 Current checks: `npm test`, `npm run build`, and `npm run test:lightweight`
 (with a local server running). The browser check defaults to
 http://127.0.0.1:8080/main/ ; set `PORTFOLIO_URL` to use another local preview.
-It covers desktop/tablet/mobile, native wheel/swipe direction, stable cards,
-responsive media, CV download, previews/focus recovery, score, terminal and deep
-links. Screenshots and the report go to ignored `output/playwright/lightweight-browsing`.
+The browser check uses an installed `playwright` module, or an external module
+specified by `PLAYWRIGHT_MODULE`. It launches Chromium by default;
+`PLAYWRIGHT_EXECUTABLE_PATH` or `PLAYWRIGHT_CHANNEL` can select an existing browser.
+It covers desktop/tablet/mobile including 320 x 568, native wheel/swipe direction,
+stable cards, non-overlapping hero actions, workshop/replay/discovery behavior,
+reduced motion, responsive media, CV download, full-size previews/focus recovery,
+contact labels, terminal focus, and deep links. Screenshots and the report go to
+ignored `output/playwright/lightweight-browsing`.
 
 Run `npm run dev -- --host 127.0.0.1 --port 8080` and open
 http://127.0.0.1:8080/main/ . Publishing remains a separate action.
 
-The motion/browsing experiments and acceptance scripts documented below describe
-older revisions, not the current lightweight experience.
+The autonomous construction layers, custom cursor, inferred reading score, and
+scroll-control experiments are not imported by the active page. The documentation
+and acceptance scripts below describe historical revisions, not this experience.
 
 ---
 
