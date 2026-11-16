@@ -15,6 +15,7 @@
     "test:startup": "node scripts/verify-scroll-startup.mjs",
     "test:in-app": "node scripts/verify-in-app-browsing.mjs",
     "test:viewport": "node scripts/verify-viewport-feedback.mjs",
+    "test:generation": "node scripts/verify-content-generation.mjs",
     "test:watch": "vitest",
     "test:construction": "node scripts/verify-construction.mjs",
     "test:construction:review": "node scripts/verify-fluid-browsing.mjs",

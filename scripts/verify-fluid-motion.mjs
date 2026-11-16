@@ -29,7 +29,7 @@ const check = (name, passed, evidence) => {
 };
 const browser = await chromium.launch({ channel: "msedge", headless: true });
 try {
-  for (const width of [1440, 390]) {
+  for (const width of process.argv.includes("--mobile-only") ? [390] : [1440, 390]) {
     const height = width === 390 ? 844 : 900;
     const context = await browser.newContext({
       viewport: { width, height }, hasTouch: width === 390, isMobile: width === 390,
@@ -64,7 +64,7 @@ try {
       await page.waitForFunction(() => Math.abs(document.querySelector("#projects").getBoundingClientRect().top) < 150);
       await page.waitForFunction(() => {
         const card = document.querySelector('[data-project="hivo"]');
-        const complete = matchMedia("(pointer: coarse)").matches || card?.getAttribute("data-scene-state") === "complete";
+        const complete = card?.getAttribute("data-scene-state") === "complete";
         return card && complete && !card.querySelector("[data-building]");
       });
       await page.waitForTimeout(700);
@@ -196,9 +196,26 @@ try {
         const zoom = page.getByRole("button", { name: "Zoom in Hivo Studio", exact: true });
         const button = await zoom.boundingBox();
         assert.ok(button && button.y > 76 && button.y + button.height < height, "Moving preview control must be inside the viewport");
-        const point = { x: button.x + button.width / 2, y: button.y + button.height - 4 };
+        await page.evaluate(() => {
+          window.movingControlEvents = [];
+          for (const type of ["pointerdown", "pointerup", "click"]) document.addEventListener(type, event => {
+            const button = document.querySelector('[data-project="hivo"] .project-actions button');
+            window.movingControlEvents.push({
+              type, label: event.target.closest("button")?.getAttribute("aria-label"),
+              x: event.clientX, y: event.clientY, box: button.getBoundingClientRect().toJSON(),
+            });
+          }, true);
+        });
+        const point = { x: button.x + button.width / 2, y: button.y + button.height / 2 };
         await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [point] });
+        const heldButton = await zoom.boundingBox();
+        await page.waitForTimeout(100);
+        const stableButton = await zoom.boundingBox();
+        check("390: a moving control stays under the finger throughout a held press",
+          heldButton && stableButton && Math.abs(heldButton.y - stableButton.y) <= 1 &&
+          Math.abs(heldButton.x - stableButton.x) <= 1, { heldButton, stableButton });
         await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+        report.movingControl = { button, point, events: await page.evaluate(() => window.movingControlEvents) };
         await page.getByRole("dialog").waitFor();
         check("390: a real tap still activates a control during the page pull", await page.getByRole("dialog").isVisible());
         await page.keyboard.press("Escape");

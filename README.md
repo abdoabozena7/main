@@ -23,6 +23,16 @@ and the original fast-scroll resistance/"Slow Down" messages. Only the moving
 cursor actors, custom mouse pointer and hero agent illustration stay removed.
 The construction clock keeps hidden worker slots for content placement, but does
 not render cursor SVGs or run pointer travel, helpers or parking animations.
+The same below-fold text/icon/media generation recipes now run on desktop and
+mobile. Touch/narrow layouts use three visual work slots (layout, text, asset),
+and the shared clock sleeps when no work is visible. Ordinary fluid movement
+can defer measurement, but is not treated as an instruction to skip generation.
+Anchors, fast-scroll recovery, real control activation and reduced motion still
+expose finished readable content. `npm run test:generation` records actual partial
+text paint and decoded icon placement on desktop and a throttled mobile profile.
+Moving image copies reuse the already-selected responsive thumbnail instead of
+requesting the full-size fallback outside its `<picture>` element; zoom remains
+full resolution.
 
 The optional visit-local score remains mounted once, independently of navigation.
 Visible regions receive `data-viewport-active` feedback immediately from their

@@ -2,6 +2,12 @@
 
 Public URL: https://abdoabozena7.github.io/main/
 
+The latest motion revision makes page deformation viewport-relative, with visible
+stretch/tilt on long documents and unchanged native scroll bounds. The same
+below-fold text, icon and media generation now runs on mobile with three visual
+work slots. Moving copies reuse decoded responsive thumbnails; original zoom
+images remain unchanged. Hero/name construction and cursor actors stay absent.
+
 The latest correction starts scroll protection before the renderer download,
 handles visible WebViews without reliable focus, and preserves held gestures
 during toolbar-height changes. Immediate viewport highlighting is separate from
@@ -20,18 +26,19 @@ visuals and the hero mascot overlay remain removed.
 
 The release has two separately reversible commits:
 
-1. Restore the original animation and speed-sensitive interaction without cursors.
-2. Add the fluid page-pull layer, including touch feedback and reduced-motion support.
+1. Make page-wide water motion visible at viewport scale.
+2. Enable below-fold content generation on mobile as well as desktop.
 
-Revert the second commit alone to remove the fluid effect without losing the
-restored interactions. Responsive media and original image previews are preserved.
+Revert the second commit alone to undo mobile generation while keeping the water
+repair. Responsive media, speed-sensitive messages and reduced motion are preserved.
 
 Publication uses the existing [Deploy portfolio workflow](.github/workflows/pages.yml)
 on pushes to `origin/main`. The current publication candidate passed 34 unit tests,
-application types/lint, the production build and 105 production-browser checks
-(23 motion, 57 general browsing and 25 original scroll-command checks).
+application types/lint, the production build and 163 production-browser checks
+(31 motion, 17 generation, 57 browsing, 25 scroll rules, 11 startup,
+7 embedded-condition and 15 viewport-feedback checks).
 After publishing, verify the workflow's exact head and live JS/CSS bytes, then run
-`test:motion`, `test:lightweight` and `test:scroll-command` with `PORTFOLIO_URL`
+`test:motion`, `test:generation`, `test:lightweight` and `test:scroll-command` with `PORTFOLIO_URL`
 set to the public URL.
 
 The earlier release records below are historical.

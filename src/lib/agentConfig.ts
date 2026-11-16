@@ -12,3 +12,6 @@ export const constructionAgents = [
   { name: "wire.ai", task: "wire", role: "structure", color: accentPalette[0] },
   { name: "verify.ai", task: "verify", role: "asset", color: accentPalette[3] },
 ] as const;
+
+/** One layout, one text and one asset slot on touch/narrow screens. */
+export const compactAgentSlots: ReadonlySet<number> = new Set([0, 2, 5]);

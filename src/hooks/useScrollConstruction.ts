@@ -5,6 +5,7 @@ import type { createConstructionDirector } from "@/lib/constructionDirector";
 import { getScrollIntent, subscribeScrollIntent } from "@/lib/scrollIntent";
 import { createNameConstruction, nameConstructionMs } from "@/lib/nameConstruction";
 import { getHeroOverlayWork, type HeroOverlayJob } from "@/lib/heroOverlayWork";
+import { compactAgentSlots } from "@/lib/agentConfig";
 
 type Kind = "text" | "asset" | "structure";
 type Target = {
@@ -301,12 +302,6 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
     };
     const schedule = () => {
       if (frame || stopped || document.hidden || reflowing || !layoutReady) return;
-      // Once the mobile hero is finished, scroll and resize need no animation
-      // callback. The separate intersection observer still runs section entrances.
-      if (mobileRegistry && !getHeroOverlayWork().active && targets.every(t => t.progress === 1)) {
-        if (!layer.hasAttribute("data-construction-idle")) layer.setAttribute("data-construction-idle", "");
-        return;
-      }
       if (layer.hasAttribute("data-construction-idle")) layer.removeAttribute("data-construction-idle");
       frame = requestAnimationFrame(tick);
     };
@@ -316,11 +311,6 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       const dt = Math.min(50, Math.max(0, now - lastTick)) * 1.15; lastTick = now;
       if (reduced.matches) { targets.forEach(finish); director?.configure(false); hideAgents(); return; }
       const overlayWork=getHeroOverlayWork();
-      if (mobileRegistry && targets.every(t => t.progress === 1) && !overlayWork.active) {
-        hideAgents(); dirty = false;
-        layer.setAttribute("data-construction-idle", "");
-        return;
-      }
       viewY = scrollY; viewWidth = innerWidth; viewHeight = innerHeight;
       frameBoxes.clear();
       const repaint = dirty;
@@ -381,7 +371,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       const used = new Set<Target>();
       const offsetX = scrollX;
       for (let index = 0; index < cursors.length; index++) {
-        if (simplified && ![0, 2, 5].includes(index)) continue;
+        if (simplified && !compactAgentSlots.has(index)) continue;
         const cursor = cursors[index];
         delete cursor.dataset.letter;
         delete cursor.dataset.overlayJob;
@@ -467,17 +457,18 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
       jump = false;
       const lowerWork = director?.tick(now, intent, work.length > 0 || overlayWork.active) || false;
       if (work.some(t => t.progress < 1) || lowerWork || overlayWork.active) schedule();
+      else layer.setAttribute("data-construction-idle", "");
     };
     const syncDirector = () => {
-      if (document.documentElement.hasAttribute("data-fluid-scroll")) { directorJump = true; return; }
-      const enabled = !mobileRegistry && !reduced.matches;
-      if (director) { director.configure(enabled); return; }
+      if (document.documentElement.hasAttribute("data-fluid-scroll")) return;
+      const enabled = !reduced.matches;
+      if (director) { director.configure(enabled, mobileRegistry); return; }
       if (!enabled || loadingDirector) return;
       loadingDirector = true;
       void import("@/lib/constructionDirector").then(({ createConstructionDirector }) => {
-        if (stopped || mobileRegistry || reduced.matches) return;
-        if (document.documentElement.hasAttribute("data-fluid-scroll")) { directorJump = true; return; }
-        director = createConstructionDirector({ layer, sections, pointers: cursors, guides, carets, pointersVisible, enabled: true, wake: schedule });
+        if (stopped || reduced.matches) return;
+        if (document.documentElement.hasAttribute("data-fluid-scroll")) return;
+        director = createConstructionDirector({ layer, sections, pointers: cursors, guides, carets, pointersVisible, compact: mobileRegistry, enabled: true, wake: schedule });
         if (directorJump) director.jump();
         if (reflowing) director.pause();
         schedule();
@@ -500,7 +491,7 @@ export function useScrollConstruction(layerRef: RefObject<HTMLDivElement>) {
         for (let i = targets.length - 1; i >= 0; i--) if (targets[i].section.id !== "hero") { finish(targets[i]); byElement.delete(targets[i].el); targets.splice(i, 1); }
       } else if (hero) registerTargets(hero);
     };
-    const onActivityReady = () => { if (!mobileRegistry && !reflowing) { director?.invalidate(); dirty = true; schedule(); } };
+    const onActivityReady = () => { if (!reflowing) { director?.invalidate(); dirty = true; schedule(); } };
     const onHeroOverlayWork = () => {
       if(!pointersVisible||stopped||document.hidden||reflowing||reduced.matches)return;
       const current=getHeroOverlayWork();

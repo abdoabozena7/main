@@ -1,10 +1,10 @@
 import { useRef, type CSSProperties } from "react";
 import { useScrollConstruction } from "@/hooks/useScrollConstruction";
 import { usePortfolioMediaPreload } from "@/hooks/usePortfolioMediaPreload";
-import { constructionAgents as agents } from "@/lib/agentConfig";
+import { constructionAgents as agents, compactAgentSlots } from "@/lib/agentConfig";
 import "@/styles/construction.css";
 
-const wideOnly = (index: number) => [0, 2, 5].includes(index) ? undefined : "";
+const wideOnly = (index: number) => compactAgentSlots.has(index) ? undefined : "";
 
 /** Keep content choreography and its worker slots without drawing cursor actors. */
 export default function AgentConstruction() {

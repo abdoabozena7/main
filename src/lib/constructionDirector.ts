@@ -4,8 +4,9 @@ import { compileRecipe, discoverScenes, readBox, semanticSurfaces, type PaintEle
 import { getScrollIntent, type ScrollIntent } from "./scrollIntent";
 import { agentHeading, rendezvousPoint } from "./agentOrientation";
 import { crewEdge } from "./crewSupport";
+import { compactAgentSlots } from "./agentConfig";
 
-type DirectorOptions = { layer: HTMLDivElement; sections: HTMLElement[]; pointers: HTMLElement[]; guides: SVGGElement[]; carets: HTMLElement[]; pointersVisible?: boolean; enabled: boolean; wake: () => void };
+type DirectorOptions = { layer: HTMLDivElement; sections: HTMLElement[]; pointers: HTMLElement[]; guides: SVGGElement[]; carets: HTMLElement[]; pointersVisible?: boolean; compact?: boolean; enabled: boolean; wake: () => void };
 type Prop = { el: HTMLDivElement; target: string; source: string; clone?: HTMLElement };
 const styleProperties = ["box-sizing", "font-family", "font-size", "font-weight", "font-style", "line-height", "letter-spacing", "text-transform", "text-align", "text-decoration", "color", "background-color", "border-top", "border-right", "border-bottom", "border-left", "border-radius", "padding", "object-fit", "object-position", "filter", "opacity", "white-space", "overflow", "display", "align-items", "justify-content", "gap"];
 const stage = (elapsed: number, job: TimedJob) => clamp01((elapsed - job.start) / Math.max(1, job.durationMs));
@@ -33,6 +34,7 @@ function measureLines(el: PaintElement) {
 export function createConstructionDirector(options: DirectorOptions) {
   const { layer, sections, pointers, guides, carets, wake } = options;
   const pointersVisible = options.pointersVisible !== false;
+  let compact = options.compact === true;
   const colors = pointers.map(pointer => pointer.style.getPropertyValue("--agent-color"));
   const stageLayer = layer.querySelector<HTMLElement>("[data-scene-layer]")!;
   const props: Prop[] = pointers.map(() => {
@@ -142,7 +144,8 @@ export function createConstructionDirector(options: DirectorOptions) {
     }
   }
 
-  function configure(next: boolean) {
+  function configure(next: boolean, nextCompact = compact) {
+    compact = nextCompact;
     if (next === enabled || disposed) return;
     enabled = next;
     if (!enabled) { scenes.forEach(finish); hideActors(); return; }
@@ -302,6 +305,14 @@ export function createConstructionDirector(options: DirectorOptions) {
     guide.setAttribute("opacity", approaching ? "0" : ".55");
   }
 
+  function reuseSelectedImage(original: PaintElement, copy: PaintElement) {
+    if (!(original instanceof HTMLImageElement) || !(copy instanceof HTMLImageElement)) return;
+    // Outside <picture>, a clone otherwise downloads the full-size fallback again.
+    copy.removeAttribute("srcset"); copy.removeAttribute("sizes");
+    copy.src = original.currentSrc || original.src;
+    copy.loading = "eager";
+  }
+
   function snapshot(u: SceneUnit, empty: boolean) {
     const root = document.createElement("div"); root.className = "scene-snapshot";
     root.style.width = `${u.box.width}px`; root.style.height = `${u.box.height}px`;
@@ -313,6 +324,7 @@ export function createConstructionDirector(options: DirectorOptions) {
         clone.style.cssText = s.kind === "shell" ? s.originalStyle : "border:1px solid #11192028;background:#93d3ae18";
       } else {
         clone = s.el.cloneNode(true) as HTMLElement;
+        reuseSelectedImage(s.el, clone);
         clone.style.cssText = s.originalStyle;
         for (const el of [clone, ...clone.querySelectorAll<HTMLElement>("*")]) {
           for (const attribute of [...el.attributes]) if (attribute.name === "id" || attribute.name.startsWith("data-") || ["tabindex", "autofocus", "name", "href", "for", "aria-labelledby", "aria-describedby"].includes(attribute.name)) el.removeAttribute(attribute.name);
@@ -331,6 +343,7 @@ export function createConstructionDirector(options: DirectorOptions) {
 
   function assetCopy(s: Surface) {
     const clone = s.el.cloneNode(true) as PaintElement;
+    reuseSelectedImage(s.el, clone);
     for (const el of [clone, ...clone.querySelectorAll("*")]) {
       for (const a of [...el.attributes]) if (a.name === "id" || a.name.startsWith("data-") || ["tabindex", "autofocus", "name", "href", "for"].includes(a.name)) el.removeAttribute(a.name);
       el.setAttribute("tabindex", "-1");
@@ -535,6 +548,7 @@ export function createConstructionDirector(options: DirectorOptions) {
         // Persistent assignments avoid job thrashing; layout and content can
         // work simultaneously without two agents gripping the same surface.
         for (const [i, pointer] of pointers.entries()) {
+          if (compact && !compactAgentSlots.has(i)) continue;
           // The approved hero may still occupy the upper viewport while About
           // enters below. Its active editors retain ownership; unused members
           // of the same eight-agent pool can construct the newly visible scene.
@@ -578,7 +592,12 @@ export function createConstructionDirector(options: DirectorOptions) {
     for (const scene of scenes) if (scene.units.some(u => u.root.contains(target) || target.contains(u.root))) finish(scene);
   }
   const interaction = (event: Event) => { if (event.target instanceof Element) expose(event.target); };
-  document.addEventListener("focusin", interaction, true); document.addEventListener("pointerdown", interaction, true);
+  const pointerInteraction = (event: PointerEvent) => {
+    // A finger press may begin scrolling; only its eventual tap should finish a scene.
+    if (event.pointerType !== "touch") interaction(event);
+  };
+  document.addEventListener("focusin", interaction, true); document.addEventListener("pointerdown", pointerInteraction, true);
+  document.addEventListener("click", interaction, true);
   configure(options.enabled);
   return {
     tick, configure, invalidate() { dirty = true; wake(); },
@@ -594,7 +613,8 @@ export function createConstructionDirector(options: DirectorOptions) {
     jump() { if (enabled) { measure(); scenes.filter(s => s.bottom - scrollY > 76 && s.top - scrollY < innerHeight).forEach(finish); hideActors(); } },
     dispose() {
       disposed = true; scenes.forEach(finish); hideActors();
-      document.removeEventListener("focusin", interaction, true); document.removeEventListener("pointerdown", interaction, true);
+      document.removeEventListener("focusin", interaction, true); document.removeEventListener("pointerdown", pointerInteraction, true);
+      document.removeEventListener("click", interaction, true);
       surfaces.forEach(s => { delete s.el.dataset.sceneTargetId; });
       scenes.forEach(s => s.units.forEach(u => { delete u.root.dataset.sceneId; delete u.root.dataset.sceneState; delete u.root.dataset.sceneBypassed; }));
       layer.ownerDocument.querySelectorAll<HTMLElement>("[data-scene-pending]").forEach(el => { delete el.dataset.scenePending; delete el.dataset.building; el.style.removeProperty("--construction-clip"); });
