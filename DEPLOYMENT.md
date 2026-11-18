@@ -1,6 +1,13 @@
-# Animated pointerless portfolio release - 16 November 2026
+# Motion chapters release - 18 November 2026
 
 Public URL: https://abdoabozena7.github.io/main/
+
+The opening draws a short print-registration accent around the immediately
+readable hero, without restoring workers, cursors or name assembly. The lower
+sections share a visual language but use distinct placement paths and reveals:
+print development, slide, stamp, unfold, shutter, diagonal and signal. The water
+pull is modestly stronger, with the same scroll distance, touch continuity and
+fast-scroll rules. Reduced motion keeps the finished, readable page.
 
 The latest motion revision makes page deformation viewport-relative, with visible
 stretch/tilt on long documents and unchanged native scroll bounds. The same
@@ -24,19 +31,20 @@ This correction preserves below-fold content animation, adaptive browsing,
 the original fast-scroll resistance and "Slow Down" messages. Moving cursor/agent
 visuals and the hero mascot overlay remain removed.
 
-The release has two separately reversible commits:
+The release keeps three separately reversible motion phases:
 
-1. Make page-wide water motion visible at viewport scale.
-2. Enable below-fold content generation on mobile as well as desktop.
+1. Add a one-time registration accent to the opening.
+2. Give below-fold chapters distinct construction movements.
+3. Increase the bounded whole-page water response.
 
-Revert the second commit alone to undo mobile generation while keeping the water
-repair. Responsive media, speed-sensitive messages and reduced motion are preserved.
+Revert the water commit alone to restore the previous pull without losing the
+opening or chapter motions. Responsive media and speed-sensitive messages are preserved.
 
 Publication uses the existing [Deploy portfolio workflow](.github/workflows/pages.yml)
-on pushes to `origin/main`. The current publication candidate passed 34 unit tests,
-application types/lint, the production build and 163 production-browser checks
-(31 motion, 17 generation, 57 browsing, 25 scroll rules, 11 startup,
-7 embedded-condition and 15 viewport-feedback checks).
+on pushes to `origin/main`. Before publishing, run the unit tests, application
+type check, and production build. Use `test:motion` and `test:generation` on a
+production preview to check the opening, real icon/media placement, visibly
+different chapter movements and the final scroll geometry.
 After publishing, verify the workflow's exact head and live JS/CSS bytes, then run
 `test:motion`, `test:generation`, `test:lightweight` and `test:scroll-command` with `PORTFOLIO_URL`
 set to the public URL.

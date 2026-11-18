@@ -6,6 +6,9 @@ GitHub Pages publishes pushes to `main` through
 
 The opening profile (name, badge, tags and buttons) renders complete immediately
 on desktop and mobile, without any worker/name-building sequence.
+Two print-registration corners and a small ink rule draw around the name once;
+the real heading and CV link stay visible and usable the whole time. Reduced
+motion presents the finished marks without animation.
 The speed guard starts in a small React-independent entry before the portfolio
 renderer is downloaded. Fluid input binds during the first layout commit, without
 waiting for images, fonts or passive effects. The original speed thresholds and
@@ -30,6 +33,11 @@ can defer measurement, but is not treated as an instruction to skip generation.
 Anchors, fast-scroll recovery, real control activation and reduced motion still
 expose finished readable content. `npm run test:generation` records actual partial
 text paint and decoded icon placement on desktop and a throttled mobile profile.
+The shared clock uses different reveal masks, placement paths and guide marks
+by subject: the portrait develops top-down, Experience logos slide or stamp into
+place, certificates unfold, and projects use shutters, diagonal sweeps or traced
+connections. Those choices are stable across screen sizes; fast jumps still show
+the finished content. Temporary wireframe copies stay transparent over nearby text.
 Moving image copies reuse the already-selected responsive thumbnail instead of
 requesting the full-size fallback outside its `<picture>` element; zoom remains
 full resolution.
@@ -61,7 +69,7 @@ resetting it between touch steps.
 Reduced motion keeps spatial
 drag disabled. Remove `useFluidScroll` from `AdaptiveBrowsing` to disable only
 this layer without removing content animation or the fast-scroll messages.
-The stronger pull is bounded to 40px, with modest additional stretch/shear; input
+The stronger pull is bounded to 46px, with modest additional stretch/shear; input
 distance, fast-scroll thresholds and reduced-motion behavior are unchanged.
 
 The media optimization still serves responsive WebP thumbnails on desktop as well as

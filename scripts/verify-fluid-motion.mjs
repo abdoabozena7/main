@@ -11,9 +11,11 @@ const out = process.env.PROVE_IT_OUTPUT_DIR || path.join("output", "playwright",
 await mkdir(out, { recursive: true });
 const sources = [
   "src/main.tsx", "src/renderApp.tsx", "src/lib/scrollGuard.ts",
+  "src/components/HeroSection.tsx", "src/styles/hero-registration.css",
   "src/pages/Index.tsx", "src/components/AdaptiveBrowsing.tsx", "src/components/AgentConstruction.tsx",
   "src/hooks/useFluidScroll.ts", "src/hooks/useFastScrollReturn.ts", "src/hooks/useScrollConstruction.ts",
   "src/hooks/useAttentionJourney.ts", "src/lib/fluidScroll.ts", "src/lib/constructionDirector.ts",
+  "src/lib/constructionScene.ts", "src/lib/constructionRecipes.ts",
   "src/styles/fluid-scroll.css",
 ];
 const fingerprint = async () => {
@@ -43,6 +45,27 @@ try {
         window.motionCallbacks = 0;
         const request = requestAnimationFrame.bind(window);
         window.requestAnimationFrame = callback => request(at => { window.motionCallbacks++; callback(at); });
+        window.openingFrames = [];
+        document.addEventListener("animationstart", event => {
+          if (event.animationName !== "hero-ink-register" || window.openingFrames.length) return;
+          const mark = event.target;
+          const hero = mark.closest("#hero");
+          const heading = hero.querySelector("h1");
+          const download = hero.querySelector("[download]");
+          const start = performance.now();
+          const sample = now => {
+            const rect = download.getBoundingClientRect();
+            const hit = document.elementFromPoint(rect.x + rect.width / 2, rect.y + rect.height / 2);
+            window.openingFrames.push({
+              stroke: parseFloat(getComputedStyle(mark).strokeDashoffset),
+              opacity: getComputedStyle(heading).opacity,
+              clip: getComputedStyle(heading).clipPath,
+              downloadHit: download.contains(hit),
+            });
+            if (now - start < 825) request(sample);
+          };
+          sample(start);
+        });
       });
       await page.goto(url, { waitUntil: "domcontentloaded" });
       await page.getByRole("heading", { level: 1 }).waitFor();
@@ -52,12 +75,20 @@ try {
         opacity: getComputedStyle(document.querySelector("#hero h1")).opacity,
       }));
       const initialHero = await sampleHero();
+      await page.waitForFunction(() => window.openingFrames.some(frame => frame.stroke > .08 && frame.stroke < .85));
+      await page.screenshot({ path: path.join(out, `${width}-hero-registering.png`) });
       await page.waitForTimeout(3200);
       await page.evaluate(() => document.fonts.ready);
       const settledHero = await sampleHero();
       check(`${width}: opening profile never enters worker construction`,
         initialHero.workshops === 0 && settledHero.workshops === 0 &&
         initialHero.clip === "none" && initialHero.opacity === "1", { initialHero, settledHero });
+      const opening = await page.evaluate(() => window.openingFrames);
+      check(`${width}: ink draws once around the already-readable name and leaves Download CV usable`,
+        new Set(opening.filter(frame => frame.stroke > .05 && frame.stroke < .9).map(frame => frame.stroke)).size >= 3 &&
+        opening.at(-1)?.stroke === 0 &&
+        opening.every(frame => frame.opacity === "1" && frame.clip === "none" && frame.downloadHit),
+        { sampleCount: opening.length, first: opening[0], last: opening.at(-1) });
       await page.screenshot({ path: path.join(out, `${width}-hero-settled.png`) });
       if (width === 390) await page.getByRole("button", { name: "Menu", exact: true }).click();
       await page.locator('nav a[href="#projects"]:visible').click();
@@ -132,8 +163,8 @@ try {
       const intermediate = new Set(frames.filter(frame => frame.y > before.y && frame.y < before.y + 120).map(frame => frame.y));
       check(`${width}: wheel input progresses through real intermediate positions`, intermediate.size >= 4, { positions: intermediate.size, from: before.y, to: frames.at(-1).y });
       check(`${width}: content bends and pulls rather than only smooth-scrolling`,
-        Math.abs(peak.ty) >= 25 && Math.abs(peak.ty) <= 44 &&
-        Math.abs(peak.shear) > .0001 && peak.scale > 1.018 && peak.scale < 1.06, peak);
+        peak.ty > 32 && peak.ty <= 46 &&
+        Math.abs(peak.shear) > .0001 && peak.scale > 1.032 && peak.scale < 1.07, peak);
       check(`${width}: visible deformation never inflates the native page bounds`,
         frames.every(frame => Math.abs(frame.pageHeight - before.pageHeight) <= 1),
         { before: before.pageHeight, maximum: Math.max(...frames.map(frame => frame.pageHeight)) });
@@ -228,6 +259,8 @@ try {
     const page = await context.newPage();
     await page.goto(url, { waitUntil: "load" });
     await page.getByRole("heading", { level: 1 }).waitFor();
+    check("reduced motion: opening print marks are static", await page.locator(".hero-register-corner path").first()
+      .evaluate(mark => getComputedStyle(mark).animationName === "none" && parseFloat(getComputedStyle(mark).strokeDashoffset) === 0));
     const from = await page.evaluate(() => scrollY);
     await page.mouse.wheel(0, 80);
     await page.waitForTimeout(250);

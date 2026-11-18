@@ -65,14 +65,14 @@ export function useFluidScroll(): WheelMotion {
         window.scrollTo({ top: scroll.position, behavior: "instant" });
       }
       const y = scrollY;
-      pull.position = clamp(pull.position + (y - lastY) * .55, 40);
+      pull.position = clamp(pull.position + (y - lastY) * .64, 46);
       pull = stepFluidMotion(pull, 0, dt);
       lastY = y;
       if (!wheelActive && Math.abs(pull.position) < .08 && Math.abs(pull.velocity) < 1) { reset(); return; }
       if (dirty) collect();
       document.documentElement.dataset.fluidScroll = wheelActive ? "pull" : "settle";
       const amount = pull.position;
-      const transform = `translate3d(0,${amount}px,0) perspective(1200px) rotateX(${-amount * .025}deg) skewY(${-amount * .0105}deg) scaleY(${1 + amount * .9 / Math.max(320, innerHeight)})`;
+      const transform = `translate3d(0,${amount}px,0) perspective(1200px) rotateX(${-amount * .028}deg) skewY(${-amount * .0115}deg) scaleY(${1 + amount * .98 / Math.max(320, innerHeight)})`;
       for (const [section, sheet] of sheets) {
         section.setAttribute("data-fluid-surface", "");
         section.style.transform = transform;
