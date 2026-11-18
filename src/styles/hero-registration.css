@@ -1,0 +1,74 @@
+.hero-nameplate {
+  position: relative;
+}
+
+.hero-registration {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.hero-register-corner {
+  position: absolute;
+  top: -3px;
+  left: 0;
+  width: clamp(20px, 4vw, 42px);
+  overflow: visible;
+  fill: none;
+  stroke: var(--accent-teal);
+  stroke-width: 1.5;
+}
+
+.hero-register-corner--end {
+  inset: auto 0 -3px auto;
+  rotate: 180deg;
+  stroke: var(--accent-coral);
+}
+
+.hero-register-corner path {
+  vector-effect: non-scaling-stroke;
+  stroke-dasharray: 1;
+  opacity: .68;
+}
+
+.hero-register-rule {
+  position: absolute;
+  inset: auto 0 -13px;
+  margin-inline: auto;
+  display: flex;
+  gap: 4px;
+  width: clamp(52px, 8vw, 106px);
+  height: 2px;
+}
+
+.hero-register-rule i {
+  flex: 1;
+  background: var(--accent-teal);
+  transform-origin: right;
+}
+
+.hero-register-rule i + i {
+  flex: .45;
+  background: var(--accent-coral);
+  transform-origin: left;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .hero-register-corner path {
+    animation: hero-ink-register .72s cubic-bezier(.16, 1, .3, 1) both;
+  }
+
+  .hero-register-corner--end path { animation-delay: .08s; }
+  .hero-register-rule i { animation: hero-ink-seat .5s .24s cubic-bezier(.16, 1, .3, 1) both; }
+}
+
+@keyframes hero-ink-register {
+  from { stroke-dashoffset: 1; opacity: .35; }
+  68% { opacity: 1; }
+  to { stroke-dashoffset: 0; opacity: .68; }
+}
+
+@keyframes hero-ink-seat {
+  from { transform: scaleX(.05); opacity: .3; }
+  to { transform: scaleX(1); opacity: 1; }
+}

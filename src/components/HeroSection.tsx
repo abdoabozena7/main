@@ -2,6 +2,7 @@ import { useState, useEffect, useRef } from "react";
 import { Github, Linkedin, Mail, ChevronDown, Globe } from "lucide-react";
 import MicrosoftHeadline from "./MicrosoftHeadline";
 import { profileContent, animatedRoles as roles } from "@/data/profileContent";
+import "@/styles/hero-registration.css";
 
 
 const HeroSection = () => {
@@ -131,15 +132,26 @@ const HeroSection = () => {
       <div className="text-center relative z-10">
         <MicrosoftHeadline />
 
-        <h1
-          data-construction="text" data-construction-scene="letters"
-          className="heading-brutal leading-[0.85]"
-          style={{ fontSize: "clamp(48px, 10vw, 130px)" }}
-        >
-          Abdelrahman
-          <br />
-          <span className="text-foreground/20">Abozena.</span>
-        </h1>
+        <div className="hero-nameplate">
+          <h1
+            data-construction="text" data-construction-scene="letters"
+            className="heading-brutal leading-[0.85]"
+            style={{ fontSize: "clamp(48px, 10vw, 130px)" }}
+          >
+            Abdelrahman
+            <br />
+            <span className="text-foreground/20">Abozena.</span>
+          </h1>
+          <div className="hero-registration" aria-hidden="true">
+            <svg className="hero-register-corner" viewBox="0 0 34 22" focusable="false">
+              <path d="M2 20V2h30" pathLength="1" />
+            </svg>
+            <svg className="hero-register-corner hero-register-corner--end" viewBox="0 0 34 22" focusable="false">
+              <path d="M2 20V2h30" pathLength="1" />
+            </svg>
+            <span className="hero-register-rule"><i /><i /></span>
+          </div>
+        </div>
 
         <div data-construction="text" className="mt-6 h-8 flex items-center justify-center">
           <span className="font-mono text-sm md:text-base tracking-[0.2em] text-foreground/50">
