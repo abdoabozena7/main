@@ -41,6 +41,7 @@ try {
           window.generationInteractions.push({ type, at: performance.now(), target: event.target.tagName, pointerType: event.pointerType });
         }, true);
         const row = document.querySelector('[data-attention-id="experience-microsoft"]');
+        const nextLogo = row.nextElementSibling.querySelector(".company-logo img");
         const heading = row.querySelector("h3");
         const image = row.querySelector("img");
         const layer = document.querySelector("[data-content-construction]");
@@ -63,6 +64,10 @@ try {
               Number(getComputedStyle(node.parentElement).opacity) > .05);
             const box = prop?.getBoundingClientRect();
             const decoded = prop?.querySelector("img");
+            const nextProp = [...layer.querySelectorAll("[data-scene-prop]")].find(node =>
+              node.dataset.sceneTarget === nextLogo.dataset.sceneTargetId &&
+              Number(getComputedStyle(node.parentElement).opacity) > .05);
+            const nextBox = nextProp?.getBoundingClientRect();
             window.generationFrames.push({
               at: now - start, state: row.dataset.sceneState,
               left: hit(.12), right: hit(.88), clip: getComputedStyle(heading).clipPath,
@@ -71,6 +76,8 @@ try {
                 getComputedStyle(layer).visibility === "visible" && box.bottom > 76 && box.top < innerHeight,
               ratio: box ? box.width / logo.width : null,
               offset: box ? Math.hypot(box.left - logo.left, box.top - logo.top) : null,
+              nextRatio: nextBox && nextBox.bottom > 76 && nextBox.top < innerHeight ?
+                nextBox.width / nextLogo.getBoundingClientRect().width : null,
             });
           }
           if (!window.generationDone && now - start < 20000) requestAnimationFrame(sample);
@@ -106,6 +113,15 @@ try {
       }
       await page.screenshot({ path: path.join(out, `${width}-generating.png`) });
       await page.waitForFunction(() => document.querySelector('[data-attention-id="experience-microsoft"]').dataset.sceneState === "complete");
+      if (width === 390) {
+        const next = page.locator('[data-attention-id="experience-microsoft"] + [data-experience-item]');
+        for (let step = 0; step < 8; step++) {
+          if ((await next.boundingBox())?.y < height * .84) break;
+          await page.mouse.wheel(0, 80);
+          await page.waitForTimeout(170);
+        }
+        await page.waitForFunction(() => document.querySelector('[data-attention-id="experience-microsoft"]').nextElementSibling.dataset.sceneState === "complete");
+      }
       await page.evaluate(() => { window.generationDone = true; });
       const frames = await page.evaluate(() => window.generationFrames);
       await writeFile(path.join(out, `${width}-frames.json`), JSON.stringify(frames));
@@ -119,6 +135,12 @@ try {
           frames: assets.length, smallest: Math.min(...assets.map(frame => frame.ratio)),
           largest: Math.max(...assets.map(frame => frame.ratio)), closest: Math.min(...assets.map(frame => frame.offset)),
         });
+      if (width === 390) {
+        const stamp = frames.flatMap(frame => frame.nextRatio == null ? [] : [frame.nextRatio]);
+        check("390: neighboring logos use visibly opposite placement gestures",
+          Math.max(...stamp) > 1.06 && stamp.some(ratio => Math.abs(ratio - 1) < .02),
+          { railSmallest: Math.min(...assets.map(frame => frame.ratio)), stampLargest: Math.max(...stamp) });
+      }
       const final = await page.locator('[data-attention-id="experience-microsoft"]').evaluate(row => {
         const image = row.querySelector("img");
         return { masks: row.querySelectorAll("[data-building],[data-scene-building]").length, decoded: image.complete && image.naturalWidth > 0 };
@@ -148,11 +170,19 @@ try {
                 Number(getComputedStyle(node.parentElement).opacity) > .05);
               const clone = prop?.querySelector("img");
               const rect = prop?.getBoundingClientRect();
+              const tokens = [...row.querySelectorAll(".palette-tag")].map(node => {
+                const clip = getComputedStyle(node).clipPath;
+                const rect = node.getBoundingClientRect();
+                const hits = [.12, .5, .88].filter(fraction =>
+                  node.contains(document.elementFromPoint(rect.left + rect.width * fraction, rect.top + rect.height / 2)));
+                return { clip, hitCount: hits.length };
+              });
               window.projectGeneration.push({
                 state: row.dataset.sceneState,
-                tokens: [...row.querySelectorAll(".palette-tag")].map(node => getComputedStyle(node).clipPath),
+                tokens,
                 source: image.currentSrc,
                 clone: clone?.currentSrc,
+                mask: prop ? getComputedStyle(prop).clipPath : null,
                 placed: !!rect && rect.top < innerHeight && rect.bottom > 76 && clone?.complete && clone.naturalWidth > 0,
               });
             }
@@ -172,9 +202,12 @@ try {
         const projectFrames = await page.evaluate(() => window.projectGeneration);
         await writeFile(path.join(out, "390-project-generation.json"), JSON.stringify(projectFrames));
         check("390: project technology tokens have real intermediate reveal paint",
-          projectFrames.some(frame => frame.tokens.some(clip => clip !== "none" && !clip.includes("100%") && !clip.includes("0% 0%"))));
+          projectFrames.some(frame => frame.tokens.some(token => token.clip !== "none" && token.hitCount > 0 && token.hitCount < 3)));
         const placements = projectFrames.filter(frame => frame.placed);
         check("390: project media has decoded moving placement frames", placements.length >= 2, { frames: placements.length });
+        check("390: driving project uses a diagonal mask before the screenshot lands",
+          placements.some(frame => frame.mask?.startsWith("polygon(")) &&
+          placements.some(frame => frame.mask === "none"));
         check("390: moving media reuses the already-selected responsive thumbnail",
           placements.every(frame => frame.source === frame.clone), placements.map(frame => ({ source: frame.source, clone: frame.clone })));
         await page.screenshot({ path: path.join(out, "390-project-generated.png") });

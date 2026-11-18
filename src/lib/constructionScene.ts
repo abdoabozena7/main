@@ -1,6 +1,8 @@
 import { clamp01, stageProgress } from "./construction";
 
 export type SceneBox = { left: number; top: number; width: number; height: number };
+export type SceneMotion = "develop" | "rail" | "stamp" | "unfold" | "shutter" | "diagonal" | "signal";
+export type SceneDirection = -1 | 1;
 export type ConstructionOperation = "trace" | "create-slot" | "duplicate" | "drag" | "resize" | "populate" | "type" | "replace" | "align" | "commit";
 export type ConstructionJob = {
   id: string;
@@ -80,4 +82,90 @@ export function operationPose(operation: ConstructionOperation, destination: Sce
     x += box.width * p; y += Math.min(18, box.height * .5);
   }
   return { box, x, y };
+}
+
+export function registrationClip(motion: SceneMotion, progress: number, direction: SceneDirection) {
+  const p = clamp01(progress);
+  if (p === 1) return "none";
+  const remaining = (1 - p) * 100;
+  switch (motion) {
+    case "develop": return `inset(0 0 ${remaining}% 0)`;
+    case "unfold": return `inset(${remaining}% 0 0 0)`;
+    case "stamp": return `inset(${remaining / 2}%)`;
+    case "shutter": return `inset(0 ${remaining / 2}%)`;
+    case "diagonal": {
+      const reach = p * 200;
+      const x = (n: number) => `${direction === 1 ? n : 100 - n}%`;
+      return reach <= 100
+        ? `polygon(${x(0)} 0%, ${x(reach)} 0%, ${x(0)} ${reach}%)`
+        : `polygon(${x(0)} 0%, ${x(100)} 0%, ${x(100)} ${reach - 100}%, ${x(reach - 100)} 100%, ${x(0)} 100%)`;
+    }
+    default: return direction === 1 ? `inset(0 ${remaining}% 0 0)` : `inset(0 0 0 ${remaining}%)`;
+  }
+}
+
+/** Place the same decoded surface with a chapter-specific stroke, then hold the exact landing. */
+export function registrationPlacement(motion: SceneMotion, destination: SceneBox, progress: number, direction: SceneDirection) {
+  const { left, top, width, height } = destination;
+  if (progress >= .82) return { box: destination, x: left + width * .2, y: top + Math.min(12, height * .1), clip: "none" };
+  const p = smooth(clamp01(progress / .82)), slack = 1 - p;
+  let sx = 1, sy = 1, dx = 0, dy = 0, pivot = .5;
+  let clip = "none";
+  switch (motion) {
+    case "develop":
+      sx = sy = mix(.94, 1, p); dy = -Math.min(26, height * .18) * slack;
+      clip = registrationClip(motion, p, direction);
+      break;
+    case "rail":
+      sx = sy = mix(.72, 1, p); dx = direction * Math.min(42, width * .4) * slack;
+      break;
+    case "stamp":
+      sx = sy = mix(1.16, 1, p); dy = -Math.min(16, height * .14) * slack;
+      break;
+    case "unfold":
+      sy = mix(.38, 1, p); pivot = 0;
+      break;
+    case "shutter":
+      dy = Math.min(15, height * .12) * slack;
+      clip = registrationClip(motion, p, direction);
+      break;
+    case "diagonal":
+      sx = sy = mix(.76, 1, p); dx = direction * Math.min(46, width * .24) * slack;
+      dy = Math.min(36, height * .24) * slack - Math.sin(Math.PI * p) * 9;
+      clip = registrationClip(motion, mix(.42, 1, p), direction);
+      break;
+    case "signal":
+      sx = mix(.54, 1, p); dy = -Math.min(9, height * .12) * slack;
+      clip = registrationClip(motion, p, direction);
+  }
+  const box = { left: left + (1 - sx) * width / 2 + dx, top: top + (1 - sy) * height * pivot + dy, width: width * sx, height: height * sy };
+  return { box, x: box.left + box.width * .2, y: box.top + Math.min(12, box.height * .1), clip };
+}
+
+export function registrationMarks(motion: SceneMotion, box: SceneBox, progress: number, direction: SceneDirection) {
+  const { left: x, top: y, width, height } = box;
+  const right = x + width, bottom = y + height, middle = x + width / 2;
+  const tick = Math.min(7, width / 4, height / 4);
+  switch (motion) {
+    case "develop": {
+      const line = y + height * progress;
+      return `M${x - tick},${line}h${tick * 2}M${right - tick},${line}h${tick * 2}`;
+    }
+    case "rail": {
+      const line = x + width * (direction === 1 ? progress : 1 - progress);
+      return `M${x},${bottom}H${right}M${line},${bottom - tick}v${tick * 2}`;
+    }
+    case "stamp":
+      return `M${middle - tick},${y}h${tick * 2}m${-tick},${-tick}v${tick * 2}M${middle - tick},${bottom}h${tick * 2}m${-tick},${-tick}v${tick * 2}`;
+    case "unfold":
+      return `M${x},${y + tick}v${-tick}H${right}v${tick}M${x},${bottom}h${tick * 2}M${right - tick * 2},${bottom}h${tick * 2}`;
+    case "shutter":
+      return `M${middle - width * progress / 2},${y}v${tick}M${middle + width * progress / 2},${bottom}v${-tick}`;
+    case "diagonal":
+      return direction === 1
+        ? `M${x},${y + tick}l${tick},${-tick}M${right - tick},${bottom}l${tick},${-tick}`
+        : `M${right - tick},${y}l${tick},${tick}M${x},${bottom - tick}l${tick},${tick}`;
+    case "signal":
+      return `M${x},${bottom}h${tick * 2}v${-tick}h${tick * 2}v${tick}h${tick * 2}`;
+  }
 }

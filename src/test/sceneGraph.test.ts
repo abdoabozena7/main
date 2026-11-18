@@ -1,10 +1,10 @@
 import { describe, expect, it } from "vitest";
-import { editorTravel, operationPose, operationTiming } from "@/lib/constructionScene";
-import { compileRecipe, type RuntimeScene, type SceneUnit, type Surface } from "@/lib/constructionRecipes";
+import { editorTravel, operationPose, operationTiming, registrationClip, registrationPlacement, type SceneMotion } from "@/lib/constructionScene";
+import { compileRecipe, discoverScenes, type RuntimeScene, type SceneUnit, type Surface } from "@/lib/constructionRecipes";
 
 const box = { left: 10, top: 20, width: 300, height: 180 };
 function unit(id: string): SceneUnit {
-  return { id, root: document.createElement("div"), kind: "project", surfaces: [], end: 0, complete: false, box };
+  return { id, root: document.createElement("div"), kind: "project", motion: "rail", direction: 1, surfaces: [], end: 0, complete: false, box };
 }
 function surface(u: SceneUnit, id: string, kind: Surface["kind"], part: string, el: Surface["el"] = document.createElement("div")): Surface {
   const s: Surface = { id, el, kind, part, box, lines: [], originalStyle: "", progress: 0, populated: false };
@@ -76,5 +76,31 @@ describe("semantic construction obligations", () => {
       expect(resized.x).toBe(resized.box.left + resized.box.width);
       expect(resized.y).toBe(resized.box.top + resized.box.height);
     }
+  });
+
+  it("uses distinguishable native masks and shared landing geometry", () => {
+    const motions: SceneMotion[] = ["develop", "rail", "stamp", "unfold", "shutter", "diagonal", "signal"];
+    const poses = motions.map(motion => registrationPlacement(motion, box, .4, 1));
+    expect(new Set(poses.map(pose => JSON.stringify([pose.box, pose.clip]))).size).toBe(motions.length);
+    for (const motion of motions) {
+      expect(registrationPlacement(motion, box, .9, 1).box).toEqual(box);
+      expect(registrationPlacement(motion, box, .9, -1).clip).toBe("none");
+      expect(registrationClip(motion, 1, 1)).toBe("none");
+    }
+    expect(registrationPlacement("rail", box, .4, -1).box.left)
+      .toBeLessThan(registrationPlacement("rail", box, .4, 1).box.left);
+    expect(registrationPlacement("stamp", box, .4, 1).box.width).toBeGreaterThan(box.width);
+    expect(registrationPlacement("unfold", box, .4, 1).box.top).toBe(box.top);
+  });
+
+  it("assigns neighboring work by subject rather than viewport or random replay", () => {
+    const section = document.createElement("section");
+    section.id = "projects";
+    section.innerHTML = '<div data-project="hivo"></div><div data-project="harrtest"></div><div data-project="ya-rab-ostorha"></div>';
+    const motions = () => discoverScenes([section]).flatMap(scene => scene.units.map(unit => unit.motion));
+    const original = motions();
+    expect(new Set(original).size).toBe(3);
+    section.prepend(section.lastElementChild!);
+    expect(motions()).toEqual([original[2], original[0], original[1]]);
   });
 });

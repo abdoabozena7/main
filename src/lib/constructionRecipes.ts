@@ -1,4 +1,4 @@
-import type { ConstructionJob, ConstructionOperation, ConstructionScene, SceneBox } from "./constructionScene";
+import type { ConstructionJob, ConstructionOperation, ConstructionScene, SceneBox, SceneDirection, SceneMotion } from "./constructionScene";
 
 export type PaintElement = HTMLElement | SVGElement;
 export type SceneKind = "heading" | "about" | "experience" | "credential" | "project" | "skill" | "activity" | "contact" | "finale";
@@ -9,8 +9,30 @@ export type Surface = {
   originalStyle: string; progress: number; populated: boolean;
 };
 export type TimedJob = ConstructionJob & { start: number; end: number; surface: Surface; source?: Surface; unit: SceneUnit };
-export type SceneUnit = { id: string; root: HTMLElement; kind: SceneKind; surfaces: Surface[]; end: number; complete: boolean; box: SceneBox; source?: SceneUnit };
+export type SceneUnit = { id: string; root: HTMLElement; kind: SceneKind; motion: SceneMotion; direction: SceneDirection; surfaces: Surface[]; end: number; complete: boolean; box: SceneBox; source?: SceneUnit };
 export type RuntimeScene = ConstructionScene & { kind: SceneKind; units: SceneUnit[]; timeline: TimedJob[]; duration: number; elapsed: number; progress: number; lastAt: number; top: number; bottom: number; entered: boolean; bypassed?: boolean; dataWait?: boolean };
+
+const headingMotions: Record<string, SceneMotion> = {
+  about: "develop", experience: "rail", education: "unfold", honors: "stamp", projects: "shutter", contact: "signal",
+};
+const projectMotions: Record<string, SceneMotion> = {
+  hivo: "shutter", harrtest: "signal", "ya-rab-ostorha": "diagonal", wazzefni: "unfold",
+  "community-simulator": "stamp", "prompt-optimizer": "rail", tayara: "develop",
+};
+
+function sceneMotion(root: HTMLElement, kind: SceneKind, section: string, index: number): SceneMotion {
+  switch (kind) {
+    case "heading": return headingMotions[section] ?? "rail";
+    case "about": return "develop";
+    case "experience": return (["rail", "stamp", "diagonal", "unfold"] as const)[index % 4];
+    case "credential": return root.hasAttribute("data-achievement") ? "stamp" :
+      (["unfold", "shutter", "develop"] as const)[index % 3];
+    case "project": return projectMotions[root.dataset.project ?? ""] ?? (index % 2 ? "diagonal" : "shutter");
+    case "contact": return root.matches("form") ? "rail" : "signal";
+    case "finale": return root.matches(".finale-heading") ? "diagonal" : root.matches(".finale-socials") ? "stamp" : "develop";
+    default: return "signal";
+  }
+}
 
 export function readBox(el: Element): SceneBox {
   const r = el.getBoundingClientRect();
@@ -21,7 +43,11 @@ export function readBox(el: Element): SceneBox {
 export function discoverScenes(sections: HTMLElement[]): RuntimeScene[] {
   const scenes: RuntimeScene[] = [];
   let serial = 0;
-  const unit = (root: HTMLElement, kind: SceneKind): SceneUnit => ({ id: `${root.closest("section")?.id || "finale"}-${kind}-${serial++}`, root, kind, surfaces: [], end: 0, complete: false, box: readBox(root) });
+  const unit = (root: HTMLElement, kind: SceneKind, index = 0): SceneUnit => {
+    const section = root.closest("section")?.id || "finale";
+    return { id: `${section}-${kind}-${serial++}`, root, kind, motion: sceneMotion(root, kind, section, index),
+      direction: index % 2 ? -1 : 1, surfaces: [], end: 0, complete: false, box: readBox(root) };
+  };
   const add = (kind: SceneKind, units: SceneUnit[]) => {
     if (!units.length) return;
     const id = `scene-${units[0].id}`;
@@ -36,20 +62,20 @@ export function discoverScenes(sections: HTMLElement[]): RuntimeScene[] {
       const root = section.querySelector<HTMLElement>(":scope > div"); if (root) add("about", [unit(root, "about")]);
     } else if (section.id === "experience") {
       let previous: SceneUnit | undefined;
-      section.querySelectorAll<HTMLElement>("[data-experience-item]").forEach(root => {
-        const u = unit(root, "experience"); u.source = previous; add("experience", [u]); previous = u;
+      section.querySelectorAll<HTMLElement>("[data-experience-item]").forEach((root, index) => {
+        const u = unit(root, "experience", index); u.source = previous; add("experience", [u]); previous = u;
       });
       section.querySelectorAll<HTMLElement>("[data-scan-group] > div > h3").forEach(root => add("heading", [unit(root, "heading")]));
     } else if (section.id === "education" || section.id === "honors") {
       let previous: SceneUnit | undefined;
-      section.querySelectorAll<HTMLElement>("[data-certificate]").forEach(root => {
-        const u = unit(root, "credential"); u.source = previous; add("credential", [u]); previous = u;
+      section.querySelectorAll<HTMLElement>("[data-certificate]").forEach((root, index) => {
+        const u = unit(root, "credential", index); u.source = previous; add("credential", [u]); previous = u;
       });
     } else if (section.id === "projects") {
       // Featured Hivo and skill rows really span the grid; group by measured rows.
       let row: SceneUnit[] = [];
-      section.querySelectorAll<HTMLElement>("[data-project]").forEach(root => {
-        const u = unit(root, "project");
+      section.querySelectorAll<HTMLElement>("[data-project]").forEach((root, index) => {
+        const u = unit(root, "project", index);
         if (row.length && Math.abs(row[0].box.top - u.box.top) > 3) { add("project", row); row = []; }
         if (row.length) u.source = row[0];
         row.push(u);
@@ -70,7 +96,7 @@ export function discoverScenes(sections: HTMLElement[]): RuntimeScene[] {
       });
     } else {
       const main = section.querySelector<HTMLElement>(":scope > .max-w-6xl");
-      if (main) Array.from(main.children).forEach(child => { if (child instanceof HTMLElement) add("finale", [unit(child, "finale")]); });
+      if (main) Array.from(main.children).forEach((child, index) => { if (child instanceof HTMLElement) add("finale", [unit(child, "finale", index)]); });
       const footer = section.querySelector<HTMLElement>(":scope > div:last-child");
       if (footer) add("finale", [unit(footer, "finale")]);
     }

@@ -1,5 +1,5 @@
 import { clamp01, textFrame } from "./construction";
-import { editorTravel, operationPose, operationTiming, type SceneBox } from "./constructionScene";
+import { editorTravel, operationPose, operationTiming, registrationClip, registrationMarks, registrationPlacement, type SceneBox, type SceneMotion } from "./constructionScene";
 import { compileRecipe, discoverScenes, readBox, semanticSurfaces, type PaintElement, type RuntimeScene, type SceneUnit, type Surface, type TimedJob } from "./constructionRecipes";
 import { getScrollIntent, type ScrollIntent } from "./scrollIntent";
 import { agentHeading, rendezvousPoint } from "./agentOrientation";
@@ -12,6 +12,11 @@ const styleProperties = ["box-sizing", "font-family", "font-size", "font-weight"
 const stage = (elapsed: number, job: TimedJob) => clamp01((elapsed - job.start) / Math.max(1, job.durationMs));
 const viewportBox = (box: SceneBox): SceneBox => ({ ...box, left: box.left - scrollX, top: box.top - scrollY });
 const visibleBox = (box: SceneBox) => box.top - scrollY < innerHeight && box.top + box.height - scrollY > 76;
+const ink: Record<SceneMotion, string> = {
+  develop: "teal", rail: "mint", stamp: "amber", unfold: "teal", shutter: "teal", diagonal: "coral", signal: "amber",
+};
+const typeset = (surface: Surface, unit: SceneUnit) =>
+  surface.kind === "text" && (unit.motion === "rail" || (unit.motion === "signal" && surface.part !== "heading"));
 
 function measureLines(el: PaintElement) {
   const origin = el.getBoundingClientRect(), lines: Surface["lines"] = [];
@@ -93,7 +98,7 @@ export function createConstructionDirector(options: DirectorOptions) {
     }
   }
 
-  function paint(s: Surface, progress: number) {
+  function paint(s: Surface, progress: number, unit: SceneUnit) {
     if (s.progress >= 1) return;
     const p = clamp01(progress);
     if (p >= 1) { release(s); return; }
@@ -106,7 +111,10 @@ export function createConstructionDirector(options: DirectorOptions) {
         s.el.style.setProperty("--scene-path-length", String(length)); s.el.style.setProperty("--scene-path-offset", String(length * (1 - p)));
       }
     } else if (s.kind !== "shell") {
-      const clip = s.kind === "text" && s.lines.length ? textFrame(s.lines, s.box.width, s.box.height, Math.floor(p * Math.max(1, s.el.textContent?.length || 1)) / Math.max(1, s.el.textContent?.length || 1)).clip : `inset(0 ${(1 - p) * 100}% 0 0)`;
+      const count = Math.max(1, s.el.textContent?.length || 1);
+      const clip = typeset(s, unit) && s.lines.length
+        ? textFrame(s.lines, s.box.width, s.box.height, Math.floor(p * count) / count).clip
+        : registrationClip(unit.motion, p, unit.direction);
       s.el.style.setProperty("--construction-clip", clip);
     }
   }
@@ -315,6 +323,7 @@ export function createConstructionDirector(options: DirectorOptions) {
 
   function snapshot(u: SceneUnit, empty: boolean) {
     const root = document.createElement("div"); root.className = "scene-snapshot";
+    if (empty) root.style.background = "transparent";
     root.style.width = `${u.box.width}px`; root.style.height = `${u.box.height}px`;
     for (const s of u.surfaces) {
       if (s.part === "frame" || s.kind === "edge" || s.el instanceof SVGElement) continue;
@@ -370,12 +379,10 @@ export function createConstructionDirector(options: DirectorOptions) {
         const first = u.surfaces.find(t => t.kind === "token"); source = viewportBox(first?.box || s.box);
       } else if (sourceAvailable) { if (!capturedSource) copyOrigins.set(job.id, { ...sourceUnit.box }); source = viewportBox(copyOrigins.get(job.id)!); }
       else operation = "create-slot";
-    } else if (operation === "drag") {
-      // The source is an empty measured local slot, not unrelated offscreen content.
-      source = { ...destination, left: destination.left + destination.width * .12, top: destination.top + Math.min(36, destination.height * .12), width: destination.width * .72, height: destination.height * .72 };
     }
-    // Give placement a short, exact-size landing hold before atomic handoff.
-    const pose = operationPose(operation, destination, source, operation === "drag" ? clamp01(progress / .82) : progress);
+    const placement = operation === "drag" || operation === "replace"
+      ? registrationPlacement(u.motion, destination, progress, u.direction) : null;
+    const pose = placement ?? operationPose(operation, destination, source, progress);
     let x = pose.x, y = pose.y;
     if (["create-slot", "resize", "trace"].includes(operation) && y > innerHeight - 18 && pose.box.top >= 76 && pose.box.top < innerHeight - 18) {
       // Tall cards extend below the viewport. Work at their visible top-right
@@ -383,7 +390,7 @@ export function createConstructionDirector(options: DirectorOptions) {
       x = pose.box.left + pose.box.width; y = pose.box.top;
     }
     if (y < 76 && pose.box.top + pose.box.height > 76 && pose.box.top + pose.box.height < innerHeight) { x = pose.box.left + pose.box.width; y = pose.box.top + pose.box.height; }
-    if (operation === "type" && s.lines.length) {
+    if (operation === "type" && typeset(s, u) && s.lines.length) {
       const text = textFrame(s.lines, s.box.width, s.box.height, progress);
       x = destination.left + text.x + 2; y = destination.top + text.y + text.height * .75;
       if (timing.phase !== "approach") carets[index].style.cssText = `background:${colors[index]};height:${Math.max(10, text.height * .75)}px;transform:translate3d(${destination.left + text.x}px,${destination.top + text.y}px,0);opacity:${Math.floor(performance.now() / 380) % 2 ? .35 : .85}`;
@@ -421,6 +428,8 @@ export function createConstructionDirector(options: DirectorOptions) {
       el.dataset.scenePhase = timing.phase;
     }
     const guide = guides[index], selection = guide.querySelector("rect")!, handles = guide.querySelector("path")!;
+    const color = `var(--accent-${ink[u.motion]}, ${colors[index]})`;
+    guide.style.color = color;
     selection.style.opacity = "1";
     guide.dataset.sceneGuide = "";
     const box = pose.box;
@@ -428,8 +437,8 @@ export function createConstructionDirector(options: DirectorOptions) {
     selection.setAttribute("width", String(box.width)); selection.setAttribute("height", String(box.height));
     selection.style.strokeDashoffset = String(operation === "trace" ? 1 - progress : 0);
     guide.setAttribute("opacity", ["type", "populate", "replace"].includes(operation) ? ".23" : ".65");
-    const r = box.left + box.width, b = box.top + box.height;
-    handles.setAttribute("d", `M${box.left + 5},${box.top}h-5v5 M${r - 5},${box.top}h5v5 M${box.left},${b - 5}v5h5 M${r - 5},${b}h5v-5`);
+    const b = box.top + box.height;
+    handles.setAttribute("d", registrationMarks(u.motion, box, progress, u.direction));
     if (operation === "align") {
       const left = Math.min(...scene.units.map(u => u.box.left)) - scrollX;
       const right = Math.max(...scene.units.map(u => u.box.left + u.box.width)) - scrollX;
@@ -443,21 +452,21 @@ export function createConstructionDirector(options: DirectorOptions) {
       actor.style.opacity = String(1 - clamp01((progress - .82) / .18));
       prop.el.style.width = `${sourceUnit.box.width}px`; prop.el.style.height = `${sourceUnit.box.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / sourceUnit.box.width},${box.height / sourceUnit.box.height})`;
-      prop.el.style.setProperty("--agent-color", colors[index]);
+      prop.el.style.setProperty("--agent-color", color);
     } else if (operation === "drag" || operation === "replace") {
       const key = `asset:${s.id}`;
       if (prop.target !== key) { prop.el.replaceChildren(assetCopy(s)); prop.target = key; }
       actor.style.opacity = "1";
       prop.el.style.width = `${destination.width}px`; prop.el.style.height = `${destination.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / Math.max(1, destination.width)},${box.height / Math.max(1, destination.height)})`;
-      prop.el.style.setProperty("--agent-color", colors[index]);
-      prop.el.style.clipPath = operation === "replace" ? `inset(0 ${(1 - progress) * 100}% 0 0)` : "none";
+      prop.el.style.setProperty("--agent-color", color);
+      prop.el.style.clipPath = placement?.clip ?? "none";
     } else if (["trace", "create-slot", "resize"].includes(operation) || s.kind === "token" && operation === "duplicate") {
       if (prop.target !== "empty") { prop.el.replaceChildren(); prop.target = "empty"; }
       actor.style.opacity = String(operation === "trace" ? .2 : .6);
       prop.el.style.width = `${destination.width}px`; prop.el.style.height = `${destination.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / Math.max(1, destination.width)},${box.height / Math.max(1, destination.height)})`;
-      prop.el.style.setProperty("--agent-color", colors[index]);
+      prop.el.style.setProperty("--agent-color", color);
     }
   }
 
@@ -529,12 +538,12 @@ export function createConstructionDirector(options: DirectorOptions) {
               const outstandingSlot = scene.timeline.some(other => other.surface === s && ["create-slot", "duplicate", "resize"].includes(other.operation) && other.end > scene.elapsed);
               if (p >= 1 && ["trace", "create-slot", "duplicate", "resize"].includes(job.operation) && !outstandingSlot) release(s);
             }
-            else if (s.kind === "token") { if (job.operation === "populate") paint(s, p); }
+            else if (s.kind === "token") { if (job.operation === "populate") paint(s, p, u); }
             else if ((job.operation === "drag" || job.operation === "replace") && p < 1 && !s.populated) {
               // A moving asset owns the pixels until its measured destination
               // is reached; the real image never appears behind a smaller copy.
               s.progress = p;
-            } else if (!(s.kind === "text" && ["trace", "create-slot", "align"].includes(job.operation))) paint(s, p);
+            } else if (!(s.kind === "text" && ["trace", "create-slot", "align"].includes(job.operation))) paint(s, p, u);
             const meaningful = p < 1 && visibleBox(s.box) && (!s.populated || ["trace", "create-slot", "align", "duplicate"].includes(job.operation));
             if (meaningful && !waiting) activeJobs.push({ job, scene, p: rawProgress });
           }
