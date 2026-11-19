@@ -1,6 +1,13 @@
 export type FluidState = { position: number; velocity: number };
 export type WheelMotion = { move: (delta: number) => boolean; stop: () => void };
 
+/** A finite version of the same damped response, for scene jobs on a fixed clock. */
+export function waterArrival(progress: number) {
+  const p = Math.max(0, Math.min(1, progress));
+  const t = p * 4;
+  return (1 - (1 + t) * Math.exp(-t)) / (1 - 5 * Math.exp(-4));
+}
+
 /** Exact critically damped motion, independent of the display's refresh rate. */
 export function stepFluidMotion(state: FluidState, target: number, elapsedMs: number): FluidState {
   const dt = Math.min(64, Math.max(0, elapsedMs)) / 1000;
