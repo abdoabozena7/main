@@ -1,20 +1,9 @@
 import { useEffect } from "react";
 
-/** Warm near media without decoding or competing with the initial viewport. */
+/** Keep the upcoming screen warm without promoting every image during mount. */
 export function usePortfolioMediaPreload() {
   useEffect(() => {
     if (!("IntersectionObserver" in window)) return;
-
-    const visible = new IntersectionObserver(entries => {
-      for (const entry of entries) {
-        if (!entry.isIntersecting) continue;
-        const image = entry.target as HTMLImageElement;
-        image.fetchPriority = "high";
-        image.loading = "eager";
-        visible.unobserve(image);
-        nearby.unobserve(image);
-      }
-    });
     const nearby = new IntersectionObserver(entries => {
       for (const entry of entries) {
         if (!entry.isIntersecting) continue;
@@ -25,12 +14,9 @@ export function usePortfolioMediaPreload() {
         }
         nearby.unobserve(image);
       }
-    }, { rootMargin: "700px 0px" });
+    }, { rootMargin: "360px 0px" });
 
-    document.querySelectorAll<HTMLImageElement>("section img[loading=lazy]").forEach(image => {
-      visible.observe(image);
-      nearby.observe(image);
-    });
-    return () => { visible.disconnect(); nearby.disconnect(); };
+    document.querySelectorAll<HTMLImageElement>("section img[loading=lazy]").forEach(image => nearby.observe(image));
+    return () => nearby.disconnect();
   }, []);
 }

@@ -16,18 +16,17 @@ const variants: Readonly<Record<string, readonly number[]>> = {
   "images/portrait-cutout.png": [240, 480, 720, 1345],
 };
 
-type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "srcSet" | "sizes"> & {
-  path: string;
-  sizes: string;
-};
+type Props = Omit<ImgHTMLAttributes<HTMLImageElement>, "src" | "srcSet" | "sizes"> & { path: string } &
+  ({ sizes: string; fullResolution?: false } | { sizes?: never; fullResolution: true });
 
-export default function ResponsiveThumbnail({ path, sizes, onError, ...props }: Props) {
+export default function ResponsiveThumbnail({ path, sizes, fullResolution, onError, ...props }: Props) {
   const [failedSource, setFailedSource] = useState<string>();
   const widths = variants[path];
   const source = import.meta.env.BASE_URL + path;
   const stem = source.replace(/\.[^.]+$/, "");
   const webp = widths && failedSource !== path
-    ? widths.map(width => `${stem}-${width}.webp ${width}w`).join(", ")
+    ? fullResolution ? `${stem}-${widths[widths.length - 1]}.webp`
+      : widths.map(width => `${stem}-${width}.webp ${width}w`).join(", ")
     : undefined;
 
   return (
@@ -35,7 +34,7 @@ export default function ResponsiveThumbnail({ path, sizes, onError, ...props }: 
       {webp && <source type="image/webp" srcSet={webp} sizes={sizes} />}
       <img
         src={source}
-        loading="lazy"
+        loading={fullResolution ? "eager" : "lazy"}
         decoding="async"
         {...props}
         onError={event => {

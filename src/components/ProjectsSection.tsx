@@ -79,7 +79,7 @@ const ProjectsSection = () => {
                   <DialogTitle>{project.title}</DialogTitle>
                   <DialogDescription>{project.imageAlt}</DialogDescription>
                 </DialogHeader>
-                <img src={`${import.meta.env.BASE_URL}${project.image}`} alt={project.imageAlt} width="1920" height="1080" />
+                <ResponsiveThumbnail fullResolution path={project.image} alt={project.imageAlt} width="1920" height="1080" />
               </DialogContent>
             </Dialog>
           ) : (

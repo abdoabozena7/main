@@ -27,7 +27,7 @@ html .project-card:hover { box-shadow: 7px 7px 0 var(--accent, var(--accent-teal
   width: calc(100vw - 32px); max-width: 1100px;
   max-height: calc(100dvh - 32px); overflow: auto; padding: 24px;
 }
-.project-preview-dialog > img {
+.project-preview-dialog img {
   display: block; width: 100%; height: auto; max-height: 72dvh; object-fit: contain;
 }
 .harrtest-flow {

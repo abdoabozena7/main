@@ -51,7 +51,7 @@ const CredentialList = ({ items, group }: CredentialListProps) => (
                 <DialogTitle>{item.degree}</DialogTitle>
                 <DialogDescription>{item.school} · {item.year}</DialogDescription>
               </DialogHeader>
-              <img src={`${import.meta.env.BASE_URL}${item.image}`} alt={item.imageAlt} className="w-full max-h-[70dvh] object-contain" />
+              <ResponsiveThumbnail fullResolution path={item.image} alt={item.imageAlt} width={item.imageWidth} height={item.imageHeight} className="w-full max-h-[70dvh] object-contain" />
             </DialogContent>
           </Dialog>
         )}

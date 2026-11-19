@@ -31,3 +31,10 @@ it("falls back to the original and reports a failure if that also fails", () => 
   fireEvent.error(image);
   expect(onError).toHaveBeenCalledOnce();
 });
+
+it("offers the full-resolution WebP in a preview with the original as fallback", () => {
+  const { container } = render(<ResponsiveThumbnail fullResolution path="images/projects/hivo.png" alt="Project screenshot" />);
+  expect(container.querySelector("source")?.getAttribute("srcset")).toMatch(/hivo-1920\.webp$/);
+  expect(screen.getByRole("img").getAttribute("src")).toMatch(/hivo\.png$/);
+  expect(screen.getByRole("img")).toHaveAttribute("loading", "eager");
+});
