@@ -79,10 +79,19 @@ try {
     check("wheel: a strong delta inside a chapter is not a whole missed chapter", await current(page) >= middle + 490 && (await events(page)).length === 1);
     await page.locator('nav a[href="#education"]:visible').click();
     await page.waitForFunction(() => Math.abs(document.getElementById("education").getBoundingClientRect().top) < 180);
+    const beforeEnd = await current(page);
     await page.keyboard.press("End");
     await page.waitForTimeout(750);
-    check("menu anchors and keyboard End never cause an automatic return", (await events(page)).length === 1 &&
-      await page.evaluate(() => scrollY + innerHeight >= document.documentElement.scrollHeight - 3));
+    await page.waitForFunction(() => !document.documentElement.hasAttribute("data-fluid-scroll"));
+    const footer = await page.locator(".finale-footer p").evaluate(line => {
+      const { top, bottom } = line.getBoundingClientRect();
+      return { top, bottom, viewport: innerHeight, y: scrollY, anchor: location.hash };
+    });
+    const afterNavigation = await events(page);
+    check("menu anchors and keyboard End reach the footer without an automatic return",
+      footer.anchor === "#education" && footer.y > beforeEnd + footer.viewport &&
+      footer.top >= 0 && footer.bottom <= footer.viewport && afterNavigation.length === 1,
+      { beforeEnd, footer, returns: afterNavigation });
 
     await page.locator('nav a[href="#contact"]:visible').click();
     await page.waitForFunction(() => Number(document.querySelector("#contact .contact-info")?.dataset.qualityExposure) > 0);
