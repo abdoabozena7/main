@@ -5,6 +5,7 @@ import { getScrollIntent, type ScrollIntent } from "./scrollIntent";
 import { agentHeading, rendezvousPoint } from "./agentOrientation";
 import { crewEdge } from "./crewSupport";
 import { compactAgentSlots } from "./agentConfig";
+import { waterArrival } from "./fluidScroll";
 
 type DirectorOptions = { layer: HTMLDivElement; sections: HTMLElement[]; pointers: HTMLElement[]; guides: SVGGElement[]; carets: HTMLElement[]; pointersVisible?: boolean; compact?: boolean; enabled: boolean; wake: () => void };
 type Prop = { el: HTMLDivElement; target: string; source: string; clone?: HTMLElement };
@@ -69,10 +70,12 @@ export function createConstructionDirector(options: DirectorOptions) {
   function imageReady(surface: Surface) {
     if (!(surface.el instanceof HTMLImageElement)) return true;
     const image = surface.el;
-    if (decoded.has(image) || failed.has(image)) return true;
+    if (decoded.has(image)) return true;
+    if (failed.has(image)) return false;
+    if (!image.decode) return image.complete && image.naturalWidth > 0;
     if (!requested.has(image)) {
-      requested.add(image); image.fetchPriority = "high"; image.loading = "eager";
-      void image.decode().then(() => { decoded.add(image); dirty = true; wake(); }, () => { failed.add(image); wake(); });
+      requested.add(image); image.loading = "eager";
+      void image.decode().then(() => { decoded.add(image); wake(); }, () => { failed.add(image); wake(); });
     }
     return false;
   }
@@ -114,7 +117,7 @@ export function createConstructionDirector(options: DirectorOptions) {
       const count = Math.max(1, s.el.textContent?.length || 1);
       const clip = typeset(s, unit) && s.lines.length
         ? textFrame(s.lines, s.box.width, s.box.height, Math.floor(p * count) / count).clip
-        : registrationClip(unit.motion, p, unit.direction);
+        : registrationClip(unit.motion, waterArrival(p), unit.direction);
       s.el.style.setProperty("--construction-clip", clip);
     }
   }
@@ -164,9 +167,9 @@ export function createConstructionDirector(options: DirectorOptions) {
         for (const target of semanticSurfaces(unit)) {
           let s = surfaces.get(target.el);
           if (!s) {
-            s = { id: `${unit.id}-surface-${unit.surfaces.length}`, ...target, box: readBox(target.el), lines: target.kind === "text" ? measureLines(target.el) : [], originalStyle: "", progress: 0, populated: false };
-            const style = getComputedStyle(target.el);
-            s.originalStyle = styleProperties.map(p => `${p}:${style.getPropertyValue(p)}`).join(";");
+            s = { id: `${unit.id}-surface-${unit.surfaces.length}`, ...target, box: readBox(target.el), lines: [], originalStyle: "", progress: 0, populated: false };
+            if (typeset(s, unit)) s.lines = measureLines(s.el);
+            if (s.el instanceof SVGElement && s.kind === "asset") copyStyle(s);
             surfaces.set(target.el, s);
           }
           unit.surfaces.push(s);
@@ -189,8 +192,8 @@ export function createConstructionDirector(options: DirectorOptions) {
       for (const u of scene.units) {
         u.box = readBox(u.root);
         for (const s of u.surfaces) {
-          s.box = readBox(s.el); if (s.kind === "text") s.lines = measureLines(s.el);
-          if (u.complete) { const style = getComputedStyle(s.el); s.originalStyle = styleProperties.map(p => `${p}:${style.getPropertyValue(p)}`).join(";"); }
+          s.box = readBox(s.el);
+          if (!u.complete && typeset(s, u)) s.lines = measureLines(s.el);
         }
       }
       scene.top = Math.min(...scene.units.map(u => u.box.top));
@@ -321,6 +324,14 @@ export function createConstructionDirector(options: DirectorOptions) {
     copy.loading = "eager";
   }
 
+  function copyStyle(surface: Surface) {
+    if (!surface.originalStyle) {
+      const style = getComputedStyle(surface.el);
+      surface.originalStyle = styleProperties.map(property => `${property}:${style.getPropertyValue(property)}`).join(";");
+    }
+    return surface.originalStyle;
+  }
+
   function snapshot(u: SceneUnit, empty: boolean) {
     const root = document.createElement("div"); root.className = "scene-snapshot";
     if (empty) root.style.background = "transparent";
@@ -330,11 +341,11 @@ export function createConstructionDirector(options: DirectorOptions) {
       let clone: HTMLElement;
       if (empty || s.kind === "shell") {
         clone = document.createElement("div");
-        clone.style.cssText = s.kind === "shell" ? s.originalStyle : "border:1px solid #11192028;background:#93d3ae18";
+        clone.style.cssText = s.kind === "shell" ? copyStyle(s) : "border:1px solid #11192028;background:#93d3ae18";
       } else {
         clone = s.el.cloneNode(true) as HTMLElement;
         reuseSelectedImage(s.el, clone);
-        clone.style.cssText = s.originalStyle;
+        clone.style.cssText = copyStyle(s);
         for (const el of [clone, ...clone.querySelectorAll<HTMLElement>("*")]) {
           for (const attribute of [...el.attributes]) if (attribute.name === "id" || attribute.name.startsWith("data-") || ["tabindex", "autofocus", "name", "href", "for", "aria-labelledby", "aria-describedby"].includes(attribute.name)) el.removeAttribute(attribute.name);
           if (el instanceof HTMLInputElement || el instanceof HTMLTextAreaElement) el.value = "";
@@ -357,7 +368,7 @@ export function createConstructionDirector(options: DirectorOptions) {
       for (const a of [...el.attributes]) if (a.name === "id" || a.name.startsWith("data-") || ["tabindex", "autofocus", "name", "href", "for"].includes(a.name)) el.removeAttribute(a.name);
       el.setAttribute("tabindex", "-1");
     }
-    clone.style.cssText = s.originalStyle;
+    clone.style.cssText = copyStyle(s);
     clone.style.position = "absolute"; clone.style.inset = "0"; clone.style.width = "100%"; clone.style.height = "100%";
     clone.style.margin = "0"; clone.style.transform = "none"; clone.style.animation = "none"; clone.style.transition = "none";
     return clone;
@@ -436,7 +447,8 @@ export function createConstructionDirector(options: DirectorOptions) {
     selection.setAttribute("x", String(box.left)); selection.setAttribute("y", String(box.top));
     selection.setAttribute("width", String(box.width)); selection.setAttribute("height", String(box.height));
     selection.style.strokeDashoffset = String(operation === "trace" ? 1 - progress : 0);
-    guide.setAttribute("opacity", ["type", "populate", "replace"].includes(operation) ? ".23" : ".65");
+    const inkOpacity = ["type", "populate", "replace"].includes(operation) ? .18 : .48;
+    guide.setAttribute("opacity", String(inkOpacity * Math.min(1, progress * 8)));
     const b = box.top + box.height;
     handles.setAttribute("d", registrationMarks(u.motion, box, progress, u.direction));
     if (operation === "align") {
@@ -445,7 +457,7 @@ export function createConstructionDirector(options: DirectorOptions) {
       handles.setAttribute("d", `${handles.getAttribute("d")} M${left},${box.top}H${right} M${box.left},${box.top}V${b}`);
     }
     if (timing.phase === "approach") { actor.style.opacity = "0"; guide.setAttribute("opacity", "0"); return; }
-    if (timing.phase === "release") guide.setAttribute("opacity", String(.65 * (1 - (progress - .94) / .06)));
+    if (timing.phase === "release") guide.setAttribute("opacity", String(inkOpacity * (1 - (progress - .94) / .06)));
     if (operation === "duplicate" && s.kind === "shell" && sourceAvailable) {
       const key = `${scene.id}:${u.id}:${sourceUnit.id}`;
       if (prop.target !== key) { prop.el.replaceChildren(snapshot(sourceUnit, scene.kind !== "project")); prop.target = key; }
@@ -463,7 +475,7 @@ export function createConstructionDirector(options: DirectorOptions) {
       prop.el.style.clipPath = placement?.clip ?? "none";
     } else if (["trace", "create-slot", "resize"].includes(operation) || s.kind === "token" && operation === "duplicate") {
       if (prop.target !== "empty") { prop.el.replaceChildren(); prop.target = "empty"; }
-      actor.style.opacity = String(operation === "trace" ? .2 : .6);
+      actor.style.opacity = String((operation === "trace" ? .1 : .28) * Math.min(1, progress * 8));
       prop.el.style.width = `${destination.width}px`; prop.el.style.height = `${destination.height}px`;
       prop.el.style.transform = `translate3d(${box.left}px,${box.top}px,0) scale(${box.width / Math.max(1, destination.width)},${box.height / Math.max(1, destination.height)})`;
       prop.el.style.setProperty("--agent-color", color);
@@ -511,12 +523,11 @@ export function createConstructionDirector(options: DirectorOptions) {
         const desired = scene.elapsed + dt * tempo;
         let limit = Infinity;
         for (const job of scene.timeline) {
-          if (["drag", "replace"].includes(job.operation) && !imageReady(job.surface)) limit = Math.min(limit, job.start);
           if (job.operation === "duplicate" && job.surface.kind === "shell" && job.unit.source && visibleBox(job.unit.source.box) && !job.unit.source.surfaces.find(s => s.part === "frame")?.populated) limit = Math.min(limit, job.start);
         }
         if (scene.kind === "activity" && !scene.root.querySelector("[data-activity-ready]") && !activityFailed(scene)) limit = Math.min(limit, 750);
         const waiting = desired > limit;
-        if (waiting && (scene.timeline.some(job => ["drag", "replace"].includes(job.operation) && !imageReady(job.surface)) || scene.kind === "activity")) scene.dataWait = true;
+        if (waiting && scene.kind === "activity") scene.dataWait = true;
         scene.elapsed = Math.max(scene.elapsed, Math.min(desired, limit));
         scene.progress = clamp01(scene.elapsed / scene.duration);
         working ||= !waiting;
@@ -534,6 +545,14 @@ export function createConstructionDirector(options: DirectorOptions) {
             const p = operationTiming(job.operation, rawProgress, job.durationMs).work;
             const s = job.surface;
             if (job.operation === "commit") continue;
+            // Text and frames finish on schedule even if a screenshot is still downloading.
+            if ((job.operation === "drag" || job.operation === "replace") && s.el instanceof HTMLImageElement && !s.populated) {
+              const ready = p < 1 && visibleBox(s.box) && imageReady(s);
+              if (!ready) {
+                if (p >= 1) release(s);
+                continue;
+              }
+            }
             if (s.kind === "shell") {
               const outstandingSlot = scene.timeline.some(other => other.surface === s && ["create-slot", "duplicate", "resize"].includes(other.operation) && other.end > scene.elapsed);
               if (p >= 1 && ["trace", "create-slot", "duplicate", "resize"].includes(job.operation) && !outstandingSlot) release(s);

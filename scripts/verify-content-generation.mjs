@@ -137,8 +137,9 @@ try {
         });
       if (width === 390) {
         const stamp = frames.flatMap(frame => frame.nextRatio == null ? [] : [frame.nextRatio]);
-        check("390: neighboring logos use visibly opposite placement gestures",
-          Math.max(...stamp) > 1.06 && stamp.some(ratio => Math.abs(ratio - 1) < .02),
+        check("390: the softer stamp still starts over-size and settles, unlike the slide-in logo",
+          Math.max(...stamp) > 1.035 && Math.max(...stamp) < 1.14 &&
+          stamp.at(-1) < stamp[0] && Math.abs(stamp.at(-1) - 1) < .02,
           { railSmallest: Math.min(...assets.map(frame => frame.ratio)), stampLargest: Math.max(...stamp) });
       }
       const final = await page.locator('[data-attention-id="experience-microsoft"]').evaluate(row => {

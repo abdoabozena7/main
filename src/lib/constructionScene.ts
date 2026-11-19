@@ -1,4 +1,5 @@
 import { clamp01, stageProgress } from "./construction";
+import { waterArrival } from "./fluidScroll";
 
 export type SceneBox = { left: number; top: number; width: number; height: number };
 export type SceneMotion = "develop" | "rail" | "stamp" | "unfold" | "shutter" | "diagonal" | "signal";
@@ -108,30 +109,30 @@ export function registrationClip(motion: SceneMotion, progress: number, directio
 export function registrationPlacement(motion: SceneMotion, destination: SceneBox, progress: number, direction: SceneDirection) {
   const { left, top, width, height } = destination;
   if (progress >= .82) return { box: destination, x: left + width * .2, y: top + Math.min(12, height * .1), clip: "none" };
-  const p = smooth(clamp01(progress / .82)), slack = 1 - p;
+  const p = waterArrival(progress / .82), slack = 1 - p;
   let sx = 1, sy = 1, dx = 0, dy = 0, pivot = .5;
   let clip = "none";
   switch (motion) {
     case "develop":
-      sx = sy = mix(.94, 1, p); dy = -Math.min(26, height * .18) * slack;
+      sx = sy = mix(.96, 1, p); dy = -Math.min(17, height * .13) * slack;
       clip = registrationClip(motion, p, direction);
       break;
     case "rail":
-      sx = sy = mix(.72, 1, p); dx = direction * Math.min(42, width * .4) * slack;
+      sx = sy = mix(.76, 1, p); dx = direction * Math.min(28, width * .32) * slack;
       break;
     case "stamp":
-      sx = sy = mix(1.16, 1, p); dy = -Math.min(16, height * .14) * slack;
+      sx = sy = mix(1.13, 1, p); dy = -Math.min(10, height * .12) * slack;
       break;
     case "unfold":
-      sy = mix(.38, 1, p); pivot = 0;
+      sy = mix(.54, 1, p); pivot = 0;
       break;
     case "shutter":
       dy = Math.min(15, height * .12) * slack;
       clip = registrationClip(motion, p, direction);
       break;
     case "diagonal":
-      sx = sy = mix(.76, 1, p); dx = direction * Math.min(46, width * .24) * slack;
-      dy = Math.min(36, height * .24) * slack - Math.sin(Math.PI * p) * 9;
+      sx = sy = mix(.84, 1, p); dx = direction * Math.min(30, width * .2) * slack;
+      dy = Math.min(22, height * .18) * slack - Math.sin(Math.PI * p) * 5;
       clip = registrationClip(motion, mix(.42, 1, p), direction);
       break;
     case "signal":

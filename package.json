@@ -42,7 +42,7 @@
     "test:scenes:recipes": "node scripts/verify-scenes.mjs --recipes-only",
     "test:scenes:layout": "node scripts/verify-scene-layout.mjs --before paced-baseline --after paced-final --pixel-before paced-copy-reference --expected-head 3daca4b",
     "test:quality": "node scripts/verify-quality.mjs",
-    "test:media-readiness": "node scripts/verify-media-readiness.mjs",
+    "test:media-readiness": "node scripts/verify-media-handoff.mjs",
     "test:scroll-recovery": "node scripts/verify-scroll-recovery.mjs",
     "test:pace": "node scripts/verify-paced-browsing.mjs",
     "test:fast-return": "node scripts/verify-scroll-command.mjs",
