@@ -25,7 +25,7 @@ export function useAttentionJourney() {
     let lastAt = performance.now(), suppressSweepUntil = 0;
     let inspection: { story: Story; started: number } | null = null;
     const visible = new Set<Story>();
-    const candidates = [...document.querySelectorAll<HTMLElement>("[data-scan-item],[data-project],.skill-category,#about > div,#hero .text-center,[data-construction-scene='activity']")];
+    const candidates = [...document.querySelectorAll<HTMLElement>("[data-scan-item],[data-project],.skill-category,#about > div,#contact .contact-info,#hero .text-center,[data-construction-scene='activity']")];
 
     const makeBlocks = (el: HTMLElement, heading: HTMLElement) => {
       const blocks: Block[] = [], added = new Set<Element>();
@@ -171,7 +171,7 @@ export function useAttentionJourney() {
       const covered = records.filter(story => story.exposure >= .6 && story.coverage >= .75);
       const fullyExposed = records.filter(story => story.credit >= .995 && story.coverage >= .95);
       dirty.forEach(story => {
-        const values = { quality: String(Math.round(story.credit * 1000) / 10), qualityCoverage: String(Math.round(story.coverage * 100)), qualityEncountered: String(story.encountered), qualityConfidence: story.confidence };
+        const values = { quality: String(Math.round(story.credit * 1000) / 10), qualityExposure: String(story.exposure), qualityCoverage: String(Math.round(story.coverage * 100)), qualityEncountered: String(story.encountered), qualityConfidence: story.confidence };
         Object.entries(values).forEach(([key, value]) => { if (story.el.dataset[key] !== value) story.el.dataset[key] = value; });
         if (story.el.matches("[data-experience-item],[data-certificate],[data-project]")) {
           const progress = String(Math.round(story.credit * 1000) / 1000);
@@ -215,7 +215,7 @@ export function useAttentionJourney() {
           inspection.story.actions.add("inspect"); scoreStory(inspection.story, frame); inspection = null;
         }
       }
-      if (canObserve(dialog ?? document.querySelector('[data-exploration-map]')) && !regrouping) {
+      if (canObserve(dialog ?? document.querySelector('[data-exploration-map]')) && !regrouping && !document.documentElement.hasAttribute("data-fluid-scroll")) {
         const intent = getScrollIntent(), rate = exposureRate((intent.active ? Math.abs(intent.speed) : 0) * 1000 / frame.height);
         visible.forEach(story => {
           const heading = frame.rect(story.heading);
@@ -322,7 +322,7 @@ export function useAttentionJourney() {
       window.removeEventListener("portfolio:fluid-settled", invalidate);
       document.fonts.removeEventListener("loadingdone", invalidate);
       document.removeEventListener("click", click, true); document.removeEventListener("visibilitychange", visibility); window.removeEventListener("focus", visibility); window.removeEventListener("blur", visibility);
-      records.forEach(story => { delete story.el.dataset.discoveryId; delete story.el.dataset.quality; delete story.el.dataset.qualityCoverage; delete story.el.dataset.qualityEncountered; delete story.el.dataset.qualityConfidence; delete story.el.dataset.explorationComplete; story.el.removeAttribute("data-viewport-active"); story.el.style.removeProperty("--exploration-evidence"); }); resetExploration();
+      records.forEach(story => { delete story.el.dataset.discoveryId; delete story.el.dataset.quality; delete story.el.dataset.qualityExposure; delete story.el.dataset.qualityCoverage; delete story.el.dataset.qualityEncountered; delete story.el.dataset.qualityConfidence; delete story.el.dataset.explorationComplete; story.el.removeAttribute("data-viewport-active"); story.el.style.removeProperty("--exploration-evidence"); }); resetExploration();
     };
   }, []);
 }

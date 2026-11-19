@@ -1,51 +1,161 @@
-import { createRequire } from 'node:module';
-import { mkdir, writeFile, readdir, readFile } from 'node:fs/promises';
-import { createHash } from 'node:crypto';
+import assert from "node:assert/strict";
+import { createRequire } from "node:module";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
 const require = createRequire(import.meta.url);
-const { chromium } = require(process.env.PLAYWRIGHT_MODULE || 'C:/Users/A-plus/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const url=process.env.PORTFOLIO_URL || 'http://127.0.0.1:8080/Clean_Portofoio/';
-const out=process.env.PORTFOLIO_EVIDENCE_DIR || 'output/playwright/section-return'; await mkdir(out,{recursive:true});
-async function fingerprint(){const files=[];async function walk(d){for(const f of await readdir(d,{withFileTypes:true})){const p=d+'/'+f.name;f.isDirectory()?await walk(p):files.push(p)}}await walk('src');const h=createHash('sha256');for(const p of files.sort())h.update(p).update(await readFile(p));return h.digest('hex')}
-const report={url,sourceBefore:await fingerprint(),checks:[],journeys:[],errors:[]};
-const check=(name,passed,evidence)=>{report.checks.push({name,passed:!!passed,evidence});console.log(passed?'PASS':'FAIL',name)};
-const browser=await chromium.launch({channel:'msedge',headless:true});
-async function open(mobile=false){const context=await browser.newContext({viewport:mobile?{width:390,height:844}:{width:1440,height:900},isMobile:mobile,hasTouch:mobile,recordVideo:{dir:out}});const page=await context.newPage();page.on('pageerror',e=>report.errors.push(e.message));await page.goto(url,{waitUntil:'domcontentloaded',timeout:45000});await page.evaluate(()=>document.fonts.ready);await page.addStyleTag({content:'html{scroll-behavior:auto!important}'});await page.locator('#education').evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-350,behavior:'instant'}));await page.waitForTimeout(800);return {context,page}}
-async function wheeling(page,delta,delay,count){for(let i=0;i<count;i++){await page.mouse.wheel(0,delta);await page.waitForTimeout(delay)}}
+const { chromium } = require(process.env.PLAYWRIGHT_MODULE || "C:\\Users\\A-plus\\.cache\\codex-runtimes\\codex-primary-runtime\\dependencies\\node\\node_modules\\playwright");
+const url = process.env.PORTFOLIO_URL || "http://127.0.0.1:8080/main/";
+const out = process.env.PROVE_IT_OUTPUT_DIR || path.join("output", "playwright", "chapter-return");
+await mkdir(out, { recursive: true });
+const report = { url, scope: "Real Edge wheel, touch and keyboard. Instant positioning only sets up independent scenarios.", checks: [], errors: [], passed: false };
+const check = (name, passed, evidence) => {
+  report.checks.push({ name, passed: Boolean(passed), evidence });
+  assert.ok(passed, name);
+  console.log(`PASS ${name}`);
+};
+const browser = await chromium.launch({ channel: "msedge", headless: true });
+const bounds = (page, id) => page.locator(`#${id}`).evaluate(section => ({
+  start: section.querySelector("h2").getBoundingClientRect().top + scrollY,
+  end: section.lastElementChild.getBoundingClientRect().bottom + scrollY,
+}));
+const position = async (page, y) => {
+  await page.evaluate(y => scrollTo({ top: y, behavior: "instant" }), y);
+  await page.waitForTimeout(360);
+  await page.waitForFunction(() => !document.documentElement.hasAttribute("data-fluid-scroll"));
+};
+const events = page => page.evaluate(() => window.chapterReturns);
+const arrive = (page, id) => page.waitForFunction(id => window.chapterReturns.some(pass => pass.id === id), id, { timeout: 6000 });
+const current = page => page.evaluate(() => scrollY);
+
+async function open(width) {
+  const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, isMobile: width === 390, hasTouch: width === 390 });
+  const page = await context.newPage();
+  page.setDefaultTimeout(15000);
+  page.on("pageerror", error => report.errors.push(error.message));
+  await page.addInitScript(() => {
+    window.chapterReturns = [];
+    window.chapterTravel = [];
+    window.touchCommands = [];
+    window.addEventListener("portfolio:section-return", event => window.chapterReturns.push(event.detail));
+    window.addEventListener("scroll", () => window.chapterTravel.push({ y: scrollY, at: performance.now(), layout: document.documentElement.dataset.browsing }), { passive: true });
+    window.addEventListener("portfolio:scroll-command", event => window.touchCommands.push({ ...event.detail, at: performance.now() }));
+  });
+  await page.goto(url, { waitUntil: "domcontentloaded" });
+  await page.getByRole("heading", { level: 1 }).waitFor();
+  await page.evaluate(() => document.fonts.ready);
+  return { context, page };
+}
+
 try {
- for(const mode of ['skipped','exposed','normal','mobile-skipped','trackpad-skipped','moderate','spike','small-trackpad']){
-  const {context,page}=await open(mode==='mobile-skipped');
-  try{
-   if(mode==='exposed'){
-    await page.locator('#education [data-discovery-id]').first().evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-140,behavior:'instant'}));
-    await page.waitForTimeout(12000);
-    const evidence=await page.locator('#education [data-discovery-id]').first().evaluate(el=>({quality:Number(el.dataset.quality),coverage:Number(el.dataset.qualityCoverage)}));
-    check('Real expanded visible Education earns meaningful exposure',evidence.quality>=60&&evidence.coverage>=75,evidence);
-    await page.locator('#education').evaluate(el=>scrollTo({top:scrollY+el.getBoundingClientRect().top-350,behavior:'instant'}));await page.waitForTimeout(300);
-   }
-   await page.evaluate(()=>{window.__sectionFrames=[];window.__returnEvents=[];window.__trusted=[];window.__wheelTiming=[];addEventListener('portfolio:fast-scroll-return',e=>window.__returnEvents.push(e.detail));addEventListener('wheel',e=>{window.__trusted.push(e.isTrusted);window.__wheelTiming.push({at:performance.now(),delta:e.deltaY})},{passive:true});window.__trace=setInterval(()=>{const el=document.querySelector('#education'),cue=document.querySelector('.section-return-cue');window.__sectionFrames.push({y:scrollY,top:el.getBoundingClientRect().top,bottom:el.getBoundingClientRect().bottom,cue:cue.dataset.visible,color:cue.style.getPropertyValue('--return-color'),section:cue.dataset.section})},16)});
-   if(mode==='normal')await wheeling(page,80,140,24);
-   else if(mode==='moderate')await wheeling(page,220,60,20);
-   else if(mode==='spike'){await wheeling(page,20,16,5);await wheeling(page,3000,16,1);await wheeling(page,20,16,30);}
-   else if(mode==='small-trackpad')await wheeling(page,6,8,60);
-   else if(mode==='trackpad-skipped')await wheeling(page,200,8,96);
-   else await wheeling(page,500,50,16);
-   const during=await page.evaluate(()=>({frames:window.__sectionFrames.slice(),events:window.__returnEvents.slice(),trusted:window.__trusted.every(Boolean),wheelTiming:window.__wheelTiming.slice()}));
-   report.journeys.push({mode,...during});
-   check(mode+': trusted browser inputs',during.trusted);
-   if(mode.endsWith('skipped')){
-    check('Whole skipped Education triggers section-targeted upward movement',during.events.some(e=>e.section==='education'&&e.from>e.to),during.events);
-    check('Return reaches Education heading and never overshoots toward landing',during.events.some(e=>e.section==='education'&&e.arrived)&&during.events.filter(e=>e.section==='education').every(e=>e.to>500),during.events);
-    check(mode+': no return cue before the whole section is passed',during.frames.slice(0,during.frames.findIndex(f=>f.bottom<=96)).every(f=>f.cue!=='true'));
-    check('Palette edge cue is shown during return',during.frames.some(f=>f.cue==='true'&&f.section==='education'&&/^#/.test(f.color)));
-    await page.screenshot({path:out+'/'+mode+'-education-return.png'});
-    await page.waitForTimeout(400);const start=await page.evaluate(()=>scrollY);await wheeling(page,80,140,4);await page.waitForTimeout(1300);
-    const end=await page.evaluate(()=>({y:scrollY,cue:document.querySelector('.section-return-cue').dataset.visible}));
-    check('Slow browsing resumes and temporary cue clears',end.y>start+160&&end.cue==='false',{start,...end});
-   }else if(mode==='exposed') check('Meaningfully exposed Education is not a return target',!during.events.some(e=>e.section==='education'),during.events);
-   else check(mode+': no reversal or edge warning',during.events.length===0&&during.frames.every(f=>f.cue!=='true'),during.events);
-   check(mode+': cue never blocks interaction or creates overflow',await page.evaluate(()=>getComputedStyle(document.querySelector('.section-return-cue')).pointerEvents==='none'&&document.documentElement.scrollWidth===innerWidth));
-   await page.evaluate(()=>clearInterval(window.__trace));
-  }finally{await context.close()}
- }
- check('No runtime exceptions',report.errors.length===0,report.errors);report.sourceAfter=await fingerprint();check('Current source is coherent',report.sourceBefore===report.sourceAfter);report.passed=report.checks.every(c=>c.passed);
-}finally{await browser.close();await writeFile(out+'/report.json',JSON.stringify(report,null,2));if(!report.passed)process.exitCode=1}
+  const { context: desktop, page } = await open(1440);
+  try {
+    const about = await bounds(page, "about");
+    const experience = await bounds(page, "experience");
+    await position(page, about.start - 205);
+    const before = await current(page);
+    await page.mouse.move(1360, 620);
+    await page.mouse.wheel(0, experience.end + 70 - before);
+    try { await arrive(page, "experience"); } catch (error) {
+      report.wheelFailure = { about, experience, before, returns: await events(page), travel: await page.evaluate(() => window.chapterTravel) };
+      throw error;
+    }
+    const returns = await events(page);
+    check("wheel: two entire chapters passed, but only the last missed chapter returns", returns.length === 1 && returns[0].id === "experience" && returns[0].qualified === 0, returns);
+    const last = await bounds(page, "experience");
+    const after = await current(page);
+    const tail = Math.max(last.start - 80, last.end - 900 + 72);
+    check("wheel: lands at the missed chapter's tail, not its heading", Math.abs(after - tail) <= 3 && after > last.start, { after, tail });
+    await page.getByRole("status").filter({ hasText: "Back to the end of Experience." }).waitFor({ state: "attached" });
+    await page.screenshot({ path: path.join(out, "desktop-tail.png") });
+    await page.mouse.wheel(0, 95);
+    await page.waitForTimeout(1000);
+    check("wheel: a visitor can continue normally immediately after the return", await current(page) > after + 80 && (await events(page)).length === 1);
+    const project = await bounds(page, "projects");
+    await position(page, (project.start + project.end) / 2);
+    const middle = await current(page);
+    await page.mouse.wheel(0, 500);
+    await page.waitForTimeout(1100);
+    check("wheel: a strong delta inside a chapter is not a whole missed chapter", await current(page) >= middle + 490 && (await events(page)).length === 1);
+    await page.locator('nav a[href="#education"]:visible').click();
+    await page.waitForFunction(() => Math.abs(document.getElementById("education").getBoundingClientRect().top) < 180);
+    await page.keyboard.press("End");
+    await page.waitForTimeout(750);
+    check("menu anchors and keyboard End never cause an automatic return", (await events(page)).length === 1 &&
+      await page.evaluate(() => scrollY + innerHeight >= document.documentElement.scrollHeight - 3));
+
+    await page.locator('nav a[href="#contact"]:visible').click();
+    await page.waitForFunction(() => Number(document.querySelector("#contact .contact-info")?.dataset.qualityExposure) > 0);
+    check("Contact can earn on-screen exposure as well as the story sections", (await events(page)).length === 1);
+  } finally { await desktop.close(); }
+
+  const { context: exposed, page: reader } = await open(1440);
+  try {
+    await reader.locator('[data-attention-id="experience-microsoft"]').scrollIntoViewIfNeeded();
+    await reader.waitForFunction(() => {
+      const story = document.querySelector('[data-attention-id="experience-microsoft"]');
+      return Number(story?.dataset.qualityExposure) >= .6 && Number(story?.dataset.qualityCoverage) >= 75;
+    }, null, { timeout: 15000 });
+    const chapter = await bounds(reader, "experience");
+    await position(reader, chapter.start - 205);
+    const from = await current(reader);
+    await reader.mouse.move(1360, 620);
+    await reader.mouse.wheel(0, chapter.end + 70 - from);
+    await reader.waitForTimeout(1200);
+    check("wheel: genuinely observed story exposure exempts a later rapid full pass", (await events(reader)).length === 0 && await current(reader) > chapter.end - 80);
+
+    const education = await bounds(reader, "education");
+    await position(reader, education.start - 110);
+    for (let move = 0; move < 20 && await current(reader) < education.end - 60; move++) {
+      await reader.mouse.wheel(0, 90);
+      await reader.waitForTimeout(370);
+    }
+    await reader.waitForTimeout(450);
+    check("wheel: a whole section browsed in small, paced steps is not a skip", (await events(reader)).length === 0 && await current(reader) >= education.end - 85);
+  } finally { await exposed.close(); }
+
+  const { context: phone, page: mobile } = await open(390);
+  try {
+    const chapter = await bounds(mobile, "education");
+    await position(mobile, chapter.start - 450);
+    const from = await current(mobile);
+    const client = await phone.newCDPSession(mobile);
+    const swipes = [];
+    for (let swipe = 0; swipe < 3 && await current(mobile) < chapter.end - 60; swipe++) {
+      const before = await current(mobile);
+      await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 190, y: 757 }] });
+      for (const y of [612, 467, 322, 177, 52]) {
+        await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 190, y }] });
+      }
+      const held = await current(mobile);
+      check(`touch: swipe ${swipe + 1} still travels forward while the finger is held`, held > before && (await events(mobile)).length === 0, { before, held });
+      await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
+      await mobile.waitForTimeout(65);
+      swipes.push({ before, held, released: await current(mobile), chapter: await bounds(mobile, "education") });
+    }
+    try { await arrive(mobile, "education"); } catch (error) {
+      report.touchFailure = { chapter, from, swipes, position: await current(mobile), returns: await events(mobile), ...await mobile.evaluate(() => ({
+        travel: window.chapterTravel, commands: window.touchCommands,
+        exposure: Array.from(document.querySelectorAll("#education [data-discovery-id]"), el => ({ exposure: el.dataset.qualityExposure, coverage: el.dataset.qualityCoverage })),
+      })) };
+      throw error;
+    }
+    const [pass] = await events(mobile);
+    const destination = await bounds(mobile, "education");
+    const tail = Math.max(destination.start - 80, destination.end - 844 + 72);
+    check("touch: a fast complete skip returns to the actual section tail after release", pass.id === "education" &&
+      Math.abs(await current(mobile) - tail) <= 3 && pass.from > pass.to && pass.qualified === 0, { pass, tail });
+    await mobile.screenshot({ path: path.join(out, "mobile-tail.png") });
+    await client.detach();
+  } finally { await phone.close(); }
+
+  check("no browser runtime errors", report.errors.length === 0, report.errors);
+  report.passed = true;
+} catch (error) {
+  report.failure = error.stack;
+  console.error(error);
+  process.exitCode = 1;
+} finally {
+  await browser.close();
+  await writeFile(path.join(out, "report.json"), JSON.stringify(report, null, 2));
+}

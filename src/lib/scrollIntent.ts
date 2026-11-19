@@ -2,6 +2,7 @@
 import { advanceScrollPace, initialScrollPace } from "./scrollPace";
 export type ScrollIntent = { speed: number; direction: number; scan: boolean; active: boolean; hardJump: boolean; leap: boolean; automatic: boolean; userDriven: boolean; inputDriven: boolean };
 const listeners = new Set<() => void>();
+const travelListeners = new Set<(from: number, to: number, at: number) => void>();
 let speed = 0, direction = 1, scan = false, hardJump = false, lastAt = 0;
 let lastY: number | null = null;
 let inputAt = -Infinity, travel = 0, samples = 0;
@@ -30,6 +31,13 @@ export function endScrollReturn() {
 
 /** Our anchor corrections are geometry bookkeeping, never evidence of user speed. */
 export function compensateScroll(top: number) {
+  const before = scrollY, now = performance.now();
+  // A fluid frame can move before the browser delivers its scroll event.
+  // Report that travel, not the compensation about to overwrite lastY.
+  if (lastY !== null && Math.abs(before - lastY) >= .5 && now >= automaticUntil) {
+    const from = lastY;
+    travelListeners.forEach(listener => listener(from, before, now));
+  }
   window.scrollTo({ top: Math.max(0, top), behavior: "instant" });
   const y = scrollY;
   compensatedY = y; lastY = y;
@@ -71,7 +79,7 @@ function start() {
   const onScroll = () => {
     const now = performance.now(), y = scrollY;
     if (compensatedY !== null && Math.abs(y - compensatedY) < 2) { compensatedY = null; lastY = y; return; }
-    const delta = y - (lastY ?? 0), gap = now - lastAt;
+    const from = lastY ?? 0, delta = y - from, gap = now - lastAt;
     if (Math.abs(delta) < .5) return;
     const gesture = now - inputAt < 650 || (userDriven && gap < 140 && now - inputAt < 2500);
     const newGesture = gesture && !userDriven;
@@ -87,6 +95,7 @@ function start() {
       pace = advanceScrollPace(pace, Math.abs(speed) * 1000 / height(), now, travel / height());
       scan = pace.scanning;
     } else { pace = initialScrollPace(); scan = false; }
+    travelListeners.forEach(listener => listener(from, y, now));
     schedulePublish();
     clearTimeout(idle);
     idle = setTimeout(() => { speed = 0; scan = false; pace = initialScrollPace(); hardJump = false; userDriven = false; publish(); }, 280);
@@ -110,4 +119,10 @@ export function subscribeScrollIntent(listener: () => void) {
   if (!listeners.size) start();
   listeners.add(listener);
   return () => { listeners.delete(listener); if (!listeners.size) stop?.(); };
+}
+
+/** Gap detection needs actual user travel, before the next layout animation. */
+export function subscribeScrollTravel(listener: (from: number, to: number, at: number) => void) {
+  travelListeners.add(listener);
+  return () => { travelListeners.delete(listener); };
 }

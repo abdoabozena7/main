@@ -29,11 +29,8 @@ try {
         if (response.status() >= 400) report.errors.push(`${response.status()} ${response.url()}`);
       });
       await page.addInitScript(() => {
-        window.lightweightProbe = { prevented: 0, commands: 0 };
-        window.addEventListener("wheel", event => {
-          setTimeout(() => { if (event.defaultPrevented) window.lightweightProbe.prevented++; }, 0);
-        });
-        window.addEventListener("portfolio:scroll-command", () => window.lightweightProbe.commands++);
+        window.lightweightProbe = { returns: 0 };
+        window.addEventListener("portfolio:section-return", () => window.lightweightProbe.returns++);
       });
       await page.goto(url, { waitUntil: "load" });
       await page.getByRole("heading", { level: 1 }).waitFor();
@@ -67,14 +64,10 @@ try {
       await page.screenshot({ path: path.join(out, `${width}-projects.png`) });
       const from = await page.evaluate(() => scrollY);
       await page.mouse.move(width / 2, height / 2);
-      for (let index = 0; index < 3; index++) {
-        await page.mouse.wheel(0, 900);
-        await page.waitForTimeout(40);
-      }
-      await page.waitForTimeout(400);
+      await page.mouse.wheel(0, 500);
+      await page.waitForTimeout(1100);
       const scroll = await page.evaluate(from => ({ from, to: scrollY, ...window.lightweightProbe }), from);
-      check(`${width}: fast input restores resistance and feedback`, scroll.to < scroll.from && scroll.prevented === 3 && scroll.commands === 3 &&
-        await page.locator('.section-return-cue[data-visible="true"] .return-popup').isVisible(), scroll);
+      check(`${width}: scrolling only part of Projects does not cause a return`, scroll.to > scroll.from + 470 && scroll.returns === 0, scroll);
       check(`${width}: details return after fast input stops`, await page.locator("[data-scan-active]").count() === 0 &&
         JSON.stringify(heights) === JSON.stringify(await page.locator("[data-project]").evaluateAll(cards => cards.map(card => card.offsetHeight))));
       const beforeUp = await page.evaluate(() => scrollY);
@@ -101,7 +94,7 @@ try {
       await zoom.click();
       const preview = page.getByRole("dialog").locator("img");
       await preview.evaluate(image => image.decode());
-      check(`${width}: zoom retains the full-resolution original`, await preview.evaluate(image => image.currentSrc.endsWith("/images/projects/hivo.png") && image.naturalWidth === 1920));
+      check(`${width}: zoom uses the compressed preview at full resolution`, await preview.evaluate(image => image.currentSrc.endsWith("/images/projects/hivo-1920.webp") && image.naturalWidth === 1920));
       await page.screenshot({ path: path.join(out, `${width}-zoom.png`) });
       await page.keyboard.press("Escape");
       await page.waitForFunction(() => document.activeElement === document.querySelector('[data-project="hivo"] .project-actions button'));

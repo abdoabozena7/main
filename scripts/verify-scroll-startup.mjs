@@ -52,6 +52,7 @@ try {
             window.firstPortfolioFrame = {
               guard: performance.getEntriesByName("portfolio:scroll-guard-ready").length,
               fluid: performance.getEntriesByName("portfolio:fluid-ready").length,
+              chapters: performance.getEntriesByName("portfolio:chapter-tracker-ready").length,
             };
           });
         }).observe(document, { childList: true, subtree: true });
@@ -75,13 +76,13 @@ try {
       await page.mouse.wheel(0, 500);
       await page.waitForTimeout(100);
       const wheelY = await page.evaluate(() => scrollY);
-      check(`${width}: FIRST strong wheel is resisted before React downloads`, wheelY <= 1750, { from: 2200, to: wheelY });
+      check(`${width}: a placeholder with no chapters cannot trigger a blind reversal`, wheelY >= 2650, { from: 2200, to: wheelY });
       if (width === 390) {
         await page.evaluate(() => scrollTo({ top: 2200, behavior: "instant" }));
         await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 195, y: 700 }] });
         await page.waitForTimeout(16);
         await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 195, y: 350 }] });
-        check("390: FIRST strong held swipe is resisted before React downloads", await page.evaluate(() => scrollY) < 2000);
+        check("390: first held swipe still travels forward before sections exist", await page.evaluate(() => scrollY) > 2500);
         await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         await page.waitForTimeout(750);
       }
@@ -91,7 +92,8 @@ try {
       await page.getByRole("heading", { level: 1 }).waitFor({ timeout: 60000 });
       await page.waitForFunction(() => window.firstPortfolioFrame !== null);
       const mounted = await page.evaluate(() => ({ frame: window.firstPortfolioFrame, listeners: window.guardRegistrations }));
-      check(`${width}: guard and fluid input are ready by first portfolio frame`, mounted.frame?.guard === 1 && mounted.frame?.fluid === 1, mounted);
+      check(`${width}: guard, fluid input and chapter tracking are ready by first portfolio frame`,
+        mounted.frame?.guard === 1 && mounted.frame?.fluid === 1 && mounted.frame?.chapters === 1, mounted);
       check(`${width}: mounting does not install a duplicate guard`, mounted.listeners === 1, mounted);
     } finally { release(); await context.close(); }
   }

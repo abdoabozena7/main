@@ -10,9 +10,14 @@ Two print-registration corners and a small ink rule draw around the name once;
 the real heading and CV link stay visible and usable the whole time. Reduced
 motion presents the finished marks without animation.
 The speed guard starts in a small React-independent entry before the portfolio
-renderer is downloaded. Fluid input binds during the first layout commit, without
-waiting for images, fonts or passive effects. The original speed thresholds and
-gesture exemptions are shared by early startup and the mounted page.
+renderer is downloaded. Fluid input and chapter tracking bind during the first
+layout commit, without waiting for images or fonts. Input speed alone never
+reverses a scroll. If the visitor passes a whole content section quickly, and
+none of its stories had meaningful on-screen exposure, the page returns to
+the end of the last section that was skipped. It offers each section at most
+once per visit. Links, keyboard navigation, dialogs and form controls remain
+exempt. Use `npm run test:scroll-command` to check the current rule. Earlier
+raw-wheel reversal experiments below are historical.
 `npm run test:startup` tests the production preview (default port 4182) with the
 real renderer deliberately held back, throttled CPU/network, and first wheel/touch
 gestures. It also checks one guard instance and fluid readiness at first paint.
@@ -22,7 +27,7 @@ width/orientation changes still cancel it safely. Fluid cleanup does not require
 the global `CSSTransition` constructor. `npm run test:in-app` simulates these
 conditions in Edge; it is not a test inside the actual Instagram/TikTok apps.
 This release retains below-fold content assembly, adaptive browsing
-and the original fast-scroll resistance/"Slow Down" messages. Only the moving
+and section-specific "Slow Down" feedback. Only the moving
 cursor actors, custom mouse pointer and hero agent illustration stay removed.
 The construction clock keeps hidden worker slots for content placement, but does
 not render cursor SVGs or run pointer travel, helpers or parking animations.
@@ -36,18 +41,21 @@ text paint and decoded icon placement on desktop and a throttled mobile profile.
 The shared clock uses different reveal masks, placement paths and guide marks
 by subject: the portrait develops top-down, Experience logos slide or stamp into
 place, certificates unfold, and projects use shutters, diagonal sweeps or traced
-connections. Those choices are stable across screen sizes; fast jumps still show
-the finished content. Temporary wireframe copies stay transparent over nearby text.
+connections. Placements and masks use the same damped easing as the water return,
+with smaller offsets and quieter guides. Fast jumps still show the finished
+content. A late image paints in its reserved slot without holding back the text.
 Moving image copies reuse the already-selected responsive thumbnail instead of
 requesting the full-size fallback outside its `<picture>` element; zoom remains
-full resolution.
+full resolution in a lighter WebP, with the original file as fallback.
 
 The optional visit-local score remains mounted once, independently of navigation.
 Visible regions receive `data-viewport-active` feedback immediately from their
 current viewport rectangles, including in visible embedded browsers that report
 `hasFocus() === false`. Company colors/outlines no longer wait for reading credit.
-Exposure/score and completion stamps still use the original dwell/coverage rules;
-hidden pages earn no credit. `npm run test:viewport` covers entry/exit, prompt
+Exposure/score and completion stamps still use dwell and on-screen coverage;
+hidden pages, automatic motion and fluid paint do not earn credit. These signals
+are used only within the visit; no tracking data is stored or sent, and visibility
+cannot prove that anyone read a section. `npm run test:viewport` covers entry/exit, prompt
 Experience feedback and the separation between highlighting and earned exposure.
 Project and credential descriptions remain readable on mobile. Reduced motion
 exposes finished content and keeps the fast-scroll feedback without spatial effects.
@@ -62,25 +70,27 @@ Construction overlays use the same transform in viewport coordinates; natural
 geometry is remeasured after settling. Fixed navigation, dialogs and floating
 controls remain stable. It settles
 back to the exact original geometry, sleeps when idle and yields immediately to
-the original fast-scroll reversal, links, keyboard, forms and image dialogs.
+the chapter-tail return, links, keyboard, forms and image dialogs.
 Touch keeps the original gesture rules and gains the same visual drag response.
 Height-only mobile toolbar changes preserve the active water response rather than
 resetting it between touch steps.
 Reduced motion keeps spatial
 drag disabled. Remove `useFluidScroll` from `AdaptiveBrowsing` to disable only
 this layer without removing content animation or the fast-scroll messages.
-The stronger pull is bounded to 46px, with modest additional stretch/shear; input
-distance, fast-scroll thresholds and reduced-motion behavior are unchanged.
+The pull stays bounded to 46px, with the same input distance and reduced-motion
+behavior. Temporary card reflow does not consume pending wheel distance.
 
-The media optimization still serves responsive WebP thumbnails on desktop as well as
-mobile, sized for the actual cards, certificates and portrait. Below-fold images
-remain lazy-loaded; zoom still opens the original full-resolution file, with
-the original image retained as the thumbnail fallback.
+WebP assets are compressed without changing their dimensions. Responsive sizes
+are still used for cards, certificates and the portrait; below-fold images remain
+lazy-loaded, with only nearby prewarming. Full-resolution zoom uses the compressed
+copy with the original retained as fallback. `npm run test:media-readiness`
+holds a real image request to check that the text stays readable and the card
+keeps its height when the image arrives.
 
 Current checks: `npm test`, `npm run build`, `npm run test:lightweight` and `npm run test:motion`
 (with a local server running). The browser check defaults to
 http://127.0.0.1:8080/main/ ; set `PORTFOLIO_URL` to use another local preview.
-The browsing check covers desktop/tablet/mobile, fast-scroll resistance/messages,
+The browsing check covers desktop/tablet/mobile, normal partial-section scrolling,
 responsive media, CV download, previews/focus recovery, score, terminal and deep
 links. Screenshots and the report go to ignored `output/playwright/lightweight-browsing`.
 The motion check verifies no opening worker construction, actual page-pull movement, exact settled geometry,

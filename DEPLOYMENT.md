@@ -1,3 +1,30 @@
+# Waterflow and section return - 19 November 2026
+
+Public URL: https://abdoabozena7.github.io/main/
+
+This release compresses responsive WebP assets and full-resolution previews,
+keeps reserved image geometry, and separates text generation from image loading.
+Below-fold motion uses damped, quieter placements while keeping the distinct
+section treatments and the existing hero.
+
+The early guard now works with actual chapter traversal and existing on-screen
+exposure. Only a quick pass across an entire unexposed section can return the
+visitor, to that section's tail. It does not collect or transmit analytics.
+The legacy unconditional fast-scroll advice in older releases is historical.
+
+The existing [Deploy portfolio workflow](.github/workflows/pages.yml) publishes
+verified commits on `main`. Before pushing, run unit tests, the app type check,
+and production build; review `test:scroll-command`, `test:motion`,
+`test:generation`, `test:lightweight`, `test:startup`, `test:in-app`,
+`test:viewport`, and `test:media-readiness` on the production preview. After
+Pages succeeds, compare public asset hashes and exercise section return and
+motion on the live page.
+
+Image loading, generation, and chapter return are separate commits. Keep
+the shared arrival curve while either animation feature still uses it.
+
+---
+
 # Motion chapters release - 18 November 2026
 
 Public URL: https://abdoabozena7.github.io/main/

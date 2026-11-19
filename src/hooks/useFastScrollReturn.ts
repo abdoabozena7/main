@@ -1,11 +1,14 @@
 import { useLayoutEffect, useSyncExternalStore } from "react";
-import { bindWheelMotion, getScrollCue, startScrollGuard, subscribeScrollCue } from "@/lib/scrollGuard";
+import { bindSectionReturn, bindWheelMotion, getScrollCue, showScrollCue, startScrollGuard, subscribeScrollCue } from "@/lib/scrollGuard";
+import { createSectionReturn } from "@/lib/sectionReturn";
 import type { WheelMotion } from "@/lib/fluidScroll";
 
 export function useFastScrollReturn(wheelMotion?: WheelMotion) {
   useLayoutEffect(() => {
     startScrollGuard();
-    return bindWheelMotion(wheelMotion);
+    const releaseMotion = bindWheelMotion(wheelMotion);
+    const releaseSections = bindSectionReturn(createSectionReturn(showScrollCue, () => wheelMotion?.stop()));
+    return () => { releaseSections(); releaseMotion(); };
   }, [wheelMotion]);
   return useSyncExternalStore(subscribeScrollCue, getScrollCue, getScrollCue);
 }

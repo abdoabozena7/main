@@ -11,6 +11,7 @@ const out = process.env.PROVE_IT_OUTPUT_DIR || path.join("output", "playwright",
 await mkdir(out, { recursive: true });
 const sources = [
   "src/main.tsx", "src/renderApp.tsx", "src/lib/scrollGuard.ts",
+  "src/lib/sectionReturn.ts",
   "src/components/HeroSection.tsx", "src/styles/hero-registration.css",
   "src/pages/Index.tsx", "src/components/AdaptiveBrowsing.tsx", "src/components/AgentConstruction.tsx",
   "src/hooks/useFluidScroll.ts", "src/hooks/useFastScrollReturn.ts", "src/hooks/useScrollConstruction.ts",
@@ -182,16 +183,9 @@ try {
       check(`${width}: no continuous idle animation loop`, idleFrames <= 3, { callbacksIn600ms: idleFrames });
       const fastStart = await page.evaluate(() => scrollY);
       await page.mouse.wheel(0, 500);
-      await page.waitForTimeout(120);
-      const fast = await page.evaluate(() => ({
-        y: scrollY,
-        cue: document.querySelector(".section-return-cue")?.getAttribute("data-visible"),
-        spatial: document.querySelectorAll("[data-fluid-surface]").length,
-      }));
-      check(`${width}: fast-scroll resistance interrupts the fluid motion immediately`, fast.y <= fastStart - 450 && fast.cue === "true", { fastStart, fast });
-      await page.screenshot({ path: path.join(out, `${width}-fast-scroll-message.png`) });
-      await page.waitForTimeout(900);
-      check(`${width}: no queued forward drift after fast reversal`, Math.abs(await page.evaluate(() => scrollY) - fast.y) <= 2);
+      await page.waitForTimeout(1050);
+      const fast = await page.evaluate(() => ({ y: scrollY, cue: document.querySelector(".section-return-cue")?.getAttribute("data-visible") }));
+      check(`${width}: a fast movement within Projects settles forward without a return cue`, Math.abs(fast.y - fastStart - 500) <= 2 && fast.cue === "false", { fastStart, fast });
       check(`${width}: cursor shapes never return`, await page.locator(".agent-pointer-shape,.virtual-agent,.curzr-arrow-pointer,[data-hero-agents]").count() === 0);
       check(`${width}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       report.journeys.push({ width, before, peak, after, idleFrames, frames });

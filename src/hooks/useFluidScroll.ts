@@ -1,5 +1,6 @@
 import { useLayoutEffect, useMemo, useRef } from "react";
 import { stepFluidMotion, type FluidState, type WheelMotion } from "@/lib/fluidScroll";
+import { getScrollIntent } from "@/lib/scrollIntent";
 import "@/styles/fluid-scroll.css";
 
 type Sheet = { top: number };
@@ -22,7 +23,7 @@ export function useFluidScroll(): WheelMotion {
     let viewportWidth = innerWidth;
     let scroll: FluidState = { position: scrollY, velocity: 0 };
     let pull: FluidState = { position: 0, velocity: 0 };
-    const blocked = () => document.hidden || reduced.matches ||
+    const blocked = () => document.hidden || reduced.matches || getScrollIntent().automatic ||
       !!document.querySelector('[role="dialog"],[data-exploration-map],nav button[aria-expanded="true"]') ||
       !!document.activeElement?.matches('input,textarea,select,[contenteditable="true"]');
     const clearSheet = (section: HTMLElement) => {
@@ -58,6 +59,13 @@ export function useFluidScroll(): WheelMotion {
       if (blocked()) { reset(); return; }
       const dt = now - lastAt; lastAt = now;
       if (wheelActive) {
+        const before = scrollY, correction = before - lastY;
+        if (correction) {
+          // Keep the remaining wheel distance after an adaptive anchor correction.
+          target = Math.max(0, Math.min(document.documentElement.scrollHeight - innerHeight, target + correction));
+          scroll.position += correction;
+          lastY = before;
+        }
         scroll = stepFluidMotion(scroll, target, dt);
         if (Math.abs(target - scroll.position) < .35 && Math.abs(scroll.velocity) < 3) {
           scroll = { position: target, velocity: 0 }; wheelActive = false;
@@ -103,6 +111,7 @@ export function useFluidScroll(): WheelMotion {
       if (wheelActive || Math.abs(scrollY - lastY) > .5) wake();
     };
     const onNavigation = () => { ignoreUntil = performance.now() + 500; reset(); };
+    const onLayoutChange = () => { dirty = true; };
     const onResize = () => {
       if (innerWidth !== viewportWidth) { viewportWidth = innerWidth; onNavigation(); }
       else {
@@ -130,7 +139,7 @@ export function useFluidScroll(): WheelMotion {
     window.addEventListener("keydown", onNavigation, true);
     window.addEventListener("hashchange", onNavigation); window.addEventListener("popstate", onNavigation);
     window.addEventListener("resize", onResize); window.addEventListener("blur", release);
-    window.addEventListener("portfolio:layout-start", stop); window.addEventListener("portfolio:regroup", stop);
+    window.addEventListener("portfolio:layout-start", onLayoutChange); window.addEventListener("portfolio:regroup", onLayoutChange);
     window.addEventListener("portfolio:fast-return-start", stop);
     document.addEventListener("pointerdown", onPointerDown, true);
     document.addEventListener("pointerup", onPointerUp, true); document.addEventListener("pointercancel", release, true);
@@ -143,7 +152,7 @@ export function useFluidScroll(): WheelMotion {
       window.removeEventListener("keydown", onNavigation, true);
       window.removeEventListener("hashchange", onNavigation); window.removeEventListener("popstate", onNavigation);
       window.removeEventListener("resize", onResize); window.removeEventListener("blur", release);
-      window.removeEventListener("portfolio:layout-start", stop); window.removeEventListener("portfolio:regroup", stop);
+      window.removeEventListener("portfolio:layout-start", onLayoutChange); window.removeEventListener("portfolio:regroup", onLayoutChange);
       window.removeEventListener("portfolio:fast-return-start", stop);
       document.removeEventListener("pointerdown", onPointerDown, true);
       document.removeEventListener("pointerup", onPointerUp, true); document.removeEventListener("pointercancel", release, true);
