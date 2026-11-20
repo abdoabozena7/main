@@ -64,11 +64,11 @@ try {
       await page.screenshot({ path: path.join(out, `${width}-projects.png`) });
       const from = await page.evaluate(() => scrollY);
       await page.mouse.move(width / 2, height / 2);
-      await page.mouse.wheel(0, 500);
+      await page.mouse.wheel(0, 240);
       await page.waitForTimeout(1100);
       const scroll = await page.evaluate(from => ({ from, to: scrollY, ...window.lightweightProbe }), from);
-      check(`${width}: scrolling only part of Projects does not cause a return`, scroll.to > scroll.from + 470 && scroll.returns === 0, scroll);
-      check(`${width}: details return after fast input stops`, await page.locator("[data-scan-active]").count() === 0 &&
+      check(`${width}: ordinary scrolling within Projects does not cause a chapter return`, scroll.to > scroll.from + 225 && scroll.returns === 0, scroll);
+      check(`${width}: ordinary scrolling leaves readable details in place`, await page.locator("[data-scan-active]").count() === 0 &&
         JSON.stringify(heights) === JSON.stringify(await page.locator("[data-project]").evaluateAll(cards => cards.map(card => card.offsetHeight))));
       const beforeUp = await page.evaluate(() => scrollY);
       await page.mouse.wheel(0, -600);

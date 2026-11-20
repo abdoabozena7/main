@@ -76,13 +76,14 @@ try {
       await page.mouse.wheel(0, 500);
       await page.waitForTimeout(100);
       const wheelY = await page.evaluate(() => scrollY);
-      check(`${width}: a placeholder with no chapters cannot trigger a blind reversal`, wheelY >= 2650, { from: 2200, to: wheelY });
+      check(`${width}: the first fast wheel step reverses before sections exist`, wheelY <= 1750, { from: 2200, to: wheelY });
       if (width === 390) {
         await page.evaluate(() => scrollTo({ top: 2200, behavior: "instant" }));
         await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 195, y: 700 }] });
         await page.waitForTimeout(16);
         await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 195, y: 350 }] });
-        check("390: first held swipe still travels forward before sections exist", await page.evaluate(() => scrollY) > 2500);
+        const touchY = await page.evaluate(() => scrollY);
+        check("390: the first fast held swipe reverses before sections exist", touchY <= 1900, { from: 2200, to: touchY });
         await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
         await page.waitForTimeout(750);
       }

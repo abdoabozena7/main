@@ -46,7 +46,7 @@
     "test:scroll-recovery": "node scripts/verify-scroll-recovery.mjs",
     "test:pace": "node scripts/verify-paced-browsing.mjs",
     "test:fast-return": "node scripts/verify-section-return.mjs",
-    "test:scroll-command": "node scripts/verify-section-return.mjs",
+    "test:scroll-command": "node scripts/verify-scroll-command.mjs",
     "test:global-scroll": "node scripts/verify-global-scroll.mjs",
     "test:hero-agents": "node scripts/verify-hero-agents.mjs",
     "test:reference-motion": "node scripts/verify-reference-motion.mjs",

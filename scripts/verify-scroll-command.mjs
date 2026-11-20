@@ -2,7 +2,7 @@ import {createRequire} from 'node:module';
 import {mkdir,readFile,readdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/A-plus/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
-const url=process.env.PORTFOLIO_URL||'http://127.0.0.1:8080/Clean_Portofoio/',out=process.env.PORTFOLIO_EVIDENCE_DIR||'output/playwright/scroll-command';await mkdir(out,{recursive:true});
+const url=process.env.PORTFOLIO_URL||'http://127.0.0.1:8080/main/',out=process.env.PORTFOLIO_EVIDENCE_DIR||'output/playwright/scroll-command';await mkdir(out,{recursive:true});
 async function hash(){const files=[];async function walk(d){for(const f of await readdir(d,{withFileTypes:true})){const p=d+'/'+f.name;f.isDirectory()?await walk(p):files.push(p)}}await walk('src');const h=createHash('sha256');for(const p of files.sort())h.update(p).update(await readFile(p));return h.digest('hex')}
 const report={url,sourceBefore:await hash(),checks:[],journeys:[],errors:[]},check=(name,passed,evidence)=>{report.checks.push({name,passed:!!passed,evidence});console.log(passed?'PASS':'FAIL',name)};
 const browser=await chromium.launch({channel:'msedge',headless:true});
@@ -12,8 +12,18 @@ async function snapshot(page){return page.evaluate(()=>({y:scrollY,commands:wind
 async function move(client,page,points,delay){await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:195,y:700}]});for(const y of points){await page.waitForTimeout(delay);await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:195,y}]})}}
 try{
  {const {context,page}=await open(false);try{
-  const start=await snapshot(page);await page.mouse.wheel(0,500);await page.waitForTimeout(100);const hard=await snapshot(page);check('FIRST strong wheel command goes UP before a section can be skipped',hard.y<=start.y-450&&hard.commands.some(c=>c.reverse&&c.input==='wheel'),{start,hard});
+  await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await page.waitForTimeout(350);
+  await page.mouse.move(1190,600);await page.mouse.wheel(0,500);await page.waitForTimeout(100);
+  const top=await snapshot(page);
+  check('The first fast wheel step cannot leave the top of the page',top.y<=1&&top.commands.some(c=>c.reverse&&c.input==='wheel'&&c.from===0),top);
+  await position(page);
+  const start=await snapshot(page);await page.screenshot({path:out+'/wheel-before.png'});
+  await page.mouse.wheel(0,500);await page.waitForTimeout(100);const hard=await snapshot(page);check('FIRST strong wheel command goes UP before a section can be skipped',hard.y<=start.y-450&&hard.commands.slice(start.commands.length).some(c=>c.reverse&&c.input==='wheel'),{start,hard});
+  const cue=page.locator('.section-return-cue[data-visible="true"]');
+  check('Immediate braking shows Slow Down without claiming a chapter was skipped',(await cue.getByRole('status').textContent())==='Slow Down. Scroll a little slower to keep going.');
+  await page.screenshot({path:out+'/wheel-brake.png'});
   await page.waitForTimeout(260);await page.mouse.wheel(0,80);await page.waitForTimeout(180);const slow=await snapshot(page);check('Ordinary command immediately goes DOWN after reversal',slow.y>hard.y+50,{hard:hard.y,slow:slow.y});
+  await page.screenshot({path:out+'/wheel-recovered.png',animations:'disabled'});
   await page.keyboard.press('PageDown');await page.waitForTimeout(500);check('Keyboard PageDown remains native downward',(await snapshot(page)).y>slow.y+300);
   await position(page);await page.mouse.move(1190,600);const wheelStart=await snapshot(page);
   for(let i=0;i<18;i++){await page.mouse.wheel(0,80);await page.waitForTimeout(34)}

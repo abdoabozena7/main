@@ -1,3 +1,16 @@
+# Immediate scroll brake restored - 20 November 2026
+
+The early entry again resists sharp wheel or swipe input immediately and shows
+"Slow Down". Ordinary scrolling keeps the water motion. The chapter-tail return
+still applies to fast full-section passes not caught by the immediate brake.
+Generation, image loading and zoom quality are unchanged.
+
+Run `test:scroll-command`, `test:startup`, `test:in-app`, and `test:fast-return`
+on the production preview before pushing to `main`. Verify wheel and touch
+behavior on https://abdoabozena7.github.io/main/ after the Pages run succeeds.
+
+---
+
 # Waterflow and section return - 19 November 2026
 
 Public URL: https://abdoabozena7.github.io/main/

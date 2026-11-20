@@ -35,7 +35,7 @@ try {
     await page.mouse.wheel(0, 500);
     await page.waitForTimeout(1000);
     const wheel = await page.evaluate(() => scrollY);
-    check("visible embedded page scrolls forward without a whole-section skip", wheel >= from + 490, { from, wheel });
+    check("visible embedded page brakes a strong wheel before any whole-section skip", wheel <= from - 490, { from, wheel });
     await page.evaluate(() => scrollTo({ top: 2200, behavior: "instant" }));
     await page.waitForTimeout(500);
     const client = await context.newCDPSession(page);
@@ -46,14 +46,14 @@ try {
     await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 195, y: 250 }] });
     const held = await page.evaluate(() => scrollY);
     const command = await page.evaluate(() => window.embeddedCommands.filter(step => step.input === "touch").at(-1));
-    check("visible embedded page handles a fast held gesture without reversing mid-swipe",
-      command?.reverse === false && command.delta === 300 && command.to === command.from + 300, { command, held });
+    check("visible embedded page brakes a fast gesture while the finger is held",
+      command?.reverse === true && command.delta === -300 && command.to === command.from - 300, { command, held });
     await page.setViewportSize({ width: 390, height: 744 });
     await page.waitForTimeout(25);
     const resized = await page.evaluate(() => scrollY);
     await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 195, y: 150 }] });
     const continued = await page.evaluate(() => scrollY);
-    check("height-only browser chrome resize does not drop the held gesture", continued > resized + 50, { resized, continued });
+    check("height-only browser chrome resize does not drop a held fast gesture", continued < resized - 50, { resized, continued });
     await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
     await page.waitForTimeout(800);
     await page.getByRole("button", { name: "Menu", exact: true }).click();

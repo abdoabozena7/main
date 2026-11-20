@@ -9,7 +9,7 @@ export default function AdaptiveBrowsing() {
   const wheelMotion = useFluidScroll();
   const cue = useFastScrollReturn(wheelMotion);
   useAdaptiveBrowsing();
-  const message = `Back to the end of ${cue.chapter}.`;
+  const message = cue.chapter ? `Back to the end of ${cue.chapter}.` : "Scroll a little slower to keep going.";
   return <>
     {createPortal(
       <div className="section-return-cue" data-visible={cue.visible}>

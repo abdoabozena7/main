@@ -183,9 +183,9 @@ try {
       check(`${width}: no continuous idle animation loop`, idleFrames <= 3, { callbacksIn600ms: idleFrames });
       const fastStart = await page.evaluate(() => scrollY);
       await page.mouse.wheel(0, 500);
-      await page.waitForTimeout(1050);
+      await page.waitForTimeout(130);
       const fast = await page.evaluate(() => ({ y: scrollY, cue: document.querySelector(".section-return-cue")?.getAttribute("data-visible") }));
-      check(`${width}: a fast movement within Projects settles forward without a return cue`, Math.abs(fast.y - fastStart - 500) <= 2 && fast.cue === "false", { fastStart, fast });
+      check(`${width}: a fast movement brakes immediately after the water motion settles`, Math.abs(fast.y - fastStart + 500) <= 2 && fast.cue === "true", { fastStart, fast });
       check(`${width}: cursor shapes never return`, await page.locator(".agent-pointer-shape,.virtual-agent,.curzr-arrow-pointer,[data-hero-agents]").count() === 0);
       check(`${width}: no horizontal overflow`, await page.evaluate(() => document.documentElement.scrollWidth <= innerWidth + 1));
       report.journeys.push({ width, before, peak, after, idleFrames, frames });

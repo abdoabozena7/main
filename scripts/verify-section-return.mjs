@@ -27,6 +27,15 @@ const position = async (page, y) => {
 const events = page => page.evaluate(() => window.chapterReturns);
 const arrive = (page, id) => page.waitForFunction(id => window.chapterReturns.some(pass => pass.id === id), id, { timeout: 6000 });
 const current = page => page.evaluate(() => scrollY);
+const wheelPast = async (page, distance) => {
+  // Moderate steps in groups of three can cross a chapter briskly without
+  // triggering the immediate brake on individual commands or longer bursts.
+  const steps = Math.ceil(distance / 260);
+  for (let step = 0; step < steps; step++) {
+    if (step) await page.waitForTimeout(step % 3 === 0 ? 260 : 85);
+    await page.mouse.wheel(0, 260);
+  }
+};
 
 async function open(width) {
   const context = await browser.newContext({ viewport: { width, height: width === 390 ? 844 : 900 }, isMobile: width === 390, hasTouch: width === 390 });
@@ -36,10 +45,10 @@ async function open(width) {
   await page.addInitScript(() => {
     window.chapterReturns = [];
     window.chapterTravel = [];
-    window.touchCommands = [];
+    window.scrollCommands = [];
     window.addEventListener("portfolio:section-return", event => window.chapterReturns.push(event.detail));
     window.addEventListener("scroll", () => window.chapterTravel.push({ y: scrollY, at: performance.now(), layout: document.documentElement.dataset.browsing }), { passive: true });
-    window.addEventListener("portfolio:scroll-command", event => window.touchCommands.push({ ...event.detail, at: performance.now() }));
+    window.addEventListener("portfolio:scroll-command", event => window.scrollCommands.push({ ...event.detail, at: performance.now() }));
   });
   await page.goto(url, { waitUntil: "domcontentloaded" });
   await page.getByRole("heading", { level: 1 }).waitFor();
@@ -55,9 +64,11 @@ try {
     await position(page, about.start - 205);
     const before = await current(page);
     await page.mouse.move(1360, 620);
-    await page.mouse.wheel(0, experience.end + 70 - before);
+    await wheelPast(page, experience.end + 70 - before);
     try { await arrive(page, "experience"); } catch (error) {
-      report.wheelFailure = { about, experience, before, returns: await events(page), travel: await page.evaluate(() => window.chapterTravel) };
+      report.wheelFailure = { about, experience, before, returns: await events(page), ...await page.evaluate(() => ({
+        travel: window.chapterTravel, commands: window.scrollCommands,
+      })) };
       throw error;
     }
     const returns = await events(page);
@@ -74,9 +85,9 @@ try {
     const project = await bounds(page, "projects");
     await position(page, (project.start + project.end) / 2);
     const middle = await current(page);
-    await page.mouse.wheel(0, 500);
+    await page.mouse.wheel(0, 240);
     await page.waitForTimeout(1100);
-    check("wheel: a strong delta inside a chapter is not a whole missed chapter", await current(page) >= middle + 490 && (await events(page)).length === 1);
+    check("wheel: an ordinary step inside a chapter is not a whole missed chapter", await current(page) >= middle + 235 && (await events(page)).length === 1);
     await page.locator('nav a[href="#education"]:visible').click();
     await page.waitForFunction(() => Math.abs(document.getElementById("education").getBoundingClientRect().top) < 180);
     const beforeEnd = await current(page);
@@ -109,7 +120,7 @@ try {
     await position(reader, chapter.start - 205);
     const from = await current(reader);
     await reader.mouse.move(1360, 620);
-    await reader.mouse.wheel(0, chapter.end + 70 - from);
+    await wheelPast(reader, chapter.end + 70 - from);
     await reader.waitForTimeout(1200);
     check("wheel: genuinely observed story exposure exempts a later rapid full pass", (await events(reader)).length === 0 && await current(reader) > chapter.end - 80);
 
@@ -126,25 +137,26 @@ try {
   const { context: phone, page: mobile } = await open(390);
   try {
     const chapter = await bounds(mobile, "education");
-    await position(mobile, chapter.start - 450);
+    await position(mobile, chapter.start - 300);
     const from = await current(mobile);
     const client = await phone.newCDPSession(mobile);
     const swipes = [];
-    for (let swipe = 0; swipe < 3 && await current(mobile) < chapter.end - 60; swipe++) {
+    for (let swipe = 0; swipe < 4 && await current(mobile) < chapter.end - 60; swipe++) {
       const before = await current(mobile);
       await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 190, y: 757 }] });
-      for (const y of [612, 467, 322, 177, 52]) {
+      for (const y of [620, 483, 346]) {
+        await mobile.waitForTimeout(62);
         await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 190, y }] });
       }
       const held = await current(mobile);
       check(`touch: swipe ${swipe + 1} still travels forward while the finger is held`, held > before && (await events(mobile)).length === 0, { before, held });
       await client.send("Input.dispatchTouchEvent", { type: "touchEnd", touchPoints: [] });
-      await mobile.waitForTimeout(65);
+      await mobile.waitForTimeout(260);
       swipes.push({ before, held, released: await current(mobile), chapter: await bounds(mobile, "education") });
     }
     try { await arrive(mobile, "education"); } catch (error) {
       report.touchFailure = { chapter, from, swipes, position: await current(mobile), returns: await events(mobile), ...await mobile.evaluate(() => ({
-        travel: window.chapterTravel, commands: window.touchCommands,
+        travel: window.chapterTravel, commands: window.scrollCommands,
         exposure: Array.from(document.querySelectorAll("#education [data-discovery-id]"), el => ({ exposure: el.dataset.qualityExposure, coverage: el.dataset.qualityCoverage })),
       })) };
       throw error;

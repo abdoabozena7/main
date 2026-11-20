@@ -11,13 +11,14 @@ the real heading and CV link stay visible and usable the whole time. Reduced
 motion presents the finished marks without animation.
 The speed guard starts in a small React-independent entry before the portfolio
 renderer is downloaded. Fluid input and chapter tracking bind during the first
-layout commit, without waiting for images or fonts. Input speed alone never
-reverses a scroll. If the visitor passes a whole content section quickly, and
-none of its stories had meaningful on-screen exposure, the page returns to
-the end of the last section that was skipped. It offers each section at most
-once per visit. Links, keyboard navigation, dialogs and form controls remain
-exempt. Use `npm run test:scroll-command` to check the current rule. Earlier
-raw-wheel reversal experiments below are historical.
+layout commit, without waiting for images or fonts. A sharp downward wheel or
+swipe is immediately resisted with upward movement and a "Slow Down" cue; slowing
+down lets browsing continue. For forward movement that passes a whole content
+section quickly without meaningful on-screen exposure, the page can still return
+to the end of the last section that was skipped, once per section per visit.
+Links, keyboard navigation, dialogs and form controls remain exempt.
+Use `npm run test:scroll-command` for immediate resistance and
+`npm run test:fast-return` for the chapter-tail fallback.
 `npm run test:startup` tests the production preview (default port 4182) with the
 real renderer deliberately held back, throttled CPU/network, and first wheel/touch
 gestures. It also checks one guard instance and fluid readiness at first paint.

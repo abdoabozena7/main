@@ -1,5 +1,5 @@
-/** The enabled flag controls the assisted scroll guard and section feedback.
- * The raw-command settings below are retained for historical recipe tests. */
+/** The enabled flag controls assisted scrolling and feedback.
+ * Sharp downward input uses the immediate reversal threshold below. */
 type FastReturnConfig = {
   enabled: boolean; destination: "input-command";
   speedViewportsPerSecond: number; sustainedMs: number; minTravelViewports: number;
