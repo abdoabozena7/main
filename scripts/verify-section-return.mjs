@@ -145,7 +145,8 @@ try {
       const before = await current(mobile);
       await client.send("Input.dispatchTouchEvent", { type: "touchStart", touchPoints: [{ x: 190, y: 757 }] });
       for (const y of [620, 483, 346]) {
-        await mobile.waitForTimeout(62);
+        // Leave headroom for browser delivery time without triggering the brake.
+        await mobile.waitForTimeout(44);
         await client.send("Input.dispatchTouchEvent", { type: "touchMove", touchPoints: [{ x: 190, y }] });
       }
       const held = await current(mobile);
