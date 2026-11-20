@@ -1,7 +1,8 @@
 # Immediate scroll brake restored - 20 November 2026
 
 The early entry again resists sharp wheel or swipe input immediately and shows
-"Slow Down". Ordinary scrolling keeps the water motion. The chapter-tail return
+"Slow Down" with the original top placement, styling, motion and rotating
+messages. Ordinary scrolling keeps the water motion. The chapter-tail return
 still applies to fast full-section passes not caught by the immediate brake.
 Generation, image loading and zoom quality are unchanged.
 

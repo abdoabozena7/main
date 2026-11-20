@@ -3,6 +3,7 @@ import {mkdir,readFile,readdir,writeFile} from 'node:fs/promises';
 import {createHash} from 'node:crypto';
 const require=createRequire(import.meta.url),{chromium}=require(process.env.PLAYWRIGHT_MODULE||'C:/Users/A-plus/.cache/codex-runtimes/codex-primary-runtime/dependencies/node/node_modules/playwright');
 const url=process.env.PORTFOLIO_URL||'http://127.0.0.1:8080/main/',out=process.env.PORTFOLIO_EVIDENCE_DIR||'output/playwright/scroll-command';await mkdir(out,{recursive:true});
+const firstMessage="What's the rush? We haven't even met properly.";
 async function hash(){const files=[];async function walk(d){for(const f of await readdir(d,{withFileTypes:true})){const p=d+'/'+f.name;f.isDirectory()?await walk(p):files.push(p)}}await walk('src');const h=createHash('sha256');for(const p of files.sort())h.update(p).update(await readFile(p));return h.digest('hex')}
 const report={url,sourceBefore:await hash(),checks:[],journeys:[],errors:[]},check=(name,passed,evidence)=>{report.checks.push({name,passed:!!passed,evidence});console.log(passed?'PASS':'FAIL',name)};
 const browser=await chromium.launch({channel:'msedge',headless:true});
@@ -10,17 +11,27 @@ async function open(mobile){const context=await browser.newContext({viewport:mob
 async function position(page){await page.evaluate(()=>scrollTo({top:2200,behavior:'instant'}));await page.waitForTimeout(500)}
 async function snapshot(page){return page.evaluate(()=>({y:scrollY,commands:window.__commands.slice(),inputs:window.__inputs.slice(),cues:window.__cues}))}
 async function move(client,page,points,delay){await client.send('Input.dispatchTouchEvent',{type:'touchStart',touchPoints:[{x:195,y:700}]});for(const y of points){await page.waitForTimeout(delay);await client.send('Input.dispatchTouchEvent',{type:'touchMove',touchPoints:[{x:195,y}]})}}
+async function appearance(page){
+  return page.locator('.return-popup').evaluate(popup=>{
+    const style=getComputedStyle(popup),box=popup.getBoundingClientRect();
+    return {variant:popup.parentElement.dataset.variant,text:popup.querySelector('span').textContent,rotate:style.rotate,animation:style.animationName,
+      top:box.top,left:box.left,right:box.right,viewport:innerWidth};
+  });
+}
 try{
  {const {context,page}=await open(false);try{
   await page.evaluate(()=>scrollTo({top:0,behavior:'instant'}));await page.waitForTimeout(350);
   await page.mouse.move(1190,600);await page.mouse.wheel(0,500);await page.waitForTimeout(100);
   const top=await snapshot(page);
   check('The first fast wheel step cannot leave the top of the page',top.y<=1&&top.commands.some(c=>c.reverse&&c.input==='wheel'&&c.from===0),top);
+  const ticket=await appearance(page);
+  check('The original ticket enters at the top with its original copy',
+    ticket.variant==='ticket'&&ticket.top>72&&ticket.top<100&&ticket.animation==='return-drop'&&ticket.text===firstMessage,ticket);
   await position(page);
   const start=await snapshot(page);await page.screenshot({path:out+'/wheel-before.png'});
   await page.mouse.wheel(0,500);await page.waitForTimeout(100);const hard=await snapshot(page);check('FIRST strong wheel command goes UP before a section can be skipped',hard.y<=start.y-450&&hard.commands.slice(start.commands.length).some(c=>c.reverse&&c.input==='wheel'),{start,hard});
   const cue=page.locator('.section-return-cue[data-visible="true"]');
-  check('Immediate braking shows Slow Down without claiming a chapter was skipped',(await cue.getByRole('status').textContent())==='Slow Down. Scroll a little slower to keep going.');
+  check('A new brake announces the next original message',(await cue.getByRole('status').textContent())==="Slow Down. Nice try. You're not skipping the good part.");
   await page.screenshot({path:out+'/wheel-brake.png'});
   await page.waitForTimeout(260);await page.mouse.wheel(0,80);await page.waitForTimeout(180);const slow=await snapshot(page);check('Ordinary command immediately goes DOWN after reversal',slow.y>hard.y+50,{hard:hard.y,slow:slow.y});
   await page.screenshot({path:out+'/wheel-recovered.png',animations:'disabled'});
@@ -31,6 +42,9 @@ try{
   const wheelReversals=wheelBurst.commands.slice(wheelStart.commands.length).filter(command=>command.input==='wheel'&&command.reverse);
   check('Many small native wheel steps reverse by their own delta during one burst',wheelReversals.length>=2&&wheelReversals.every(command=>command.delta===-80),{wheelStart,wheelBurst});
   check('Slow Down is mounted once during a qualifying wheel burst',wheelBurst.cues-wheelStart.cues===1,{wheelStart:wheelStart.cues,wheelBurst:wheelBurst.cues});
+  const note=await appearance(page);
+  check('The original angled note and its distinct entrance return on the next burst',
+    note.variant==='note'&&note.rotate==='-2deg'&&note.animation==='return-note'&&note.text==="Easy, speedrunner. This isn't a race to the footer.",note);
   await position(page);const repeatStart=await snapshot(page);
   for(let i=0;i<4;i++){await page.mouse.wheel(0,360);await page.waitForTimeout(270)}
   const repeated=await snapshot(page);
@@ -51,6 +65,9 @@ try{
   await move(client,page,[400,100],16);const held=await snapshot(page);
   check('Strong touch command goes UP WHILE finger is held',held.y<start.y-150&&held.commands.some(c=>c.input==='touch'&&c.reverse),{start,held});
   check('Strong touch never first moves DOWN',held.commands.filter(c=>c.input==='touch').every(c=>c.to<=c.from),held.commands);
+  const touchCue=await appearance(page);
+  check('Touch shows the same original ticket below the mobile menu without clipping',
+    touchCue.variant==='ticket'&&touchCue.top>=66&&touchCue.top<92&&touchCue.left>0&&touchCue.right<touchCue.viewport&&touchCue.text===firstMessage,touchCue);
   await page.screenshot({path:out+'/touch-held-up.png'});
   await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(750);const coast=await snapshot(page);check('Fast touch release continues upward, never flings down',coast.y<=held.y+2,{held:held.y,coast:coast.y});
   await position(page);const slowStart=await snapshot(page);await move(client,page,[675,650,625],80);const slowHeld=await snapshot(page);check('Ordinary touch moves DOWN while held',slowHeld.y>slowStart.y+50,{start:slowStart.y,end:slowHeld.y});await client.send('Input.dispatchTouchEvent',{type:'touchEnd',touchPoints:[]});await page.waitForTimeout(750);check('Normal touch retains downward release momentum',(await snapshot(page)).y>slowHeld.y);

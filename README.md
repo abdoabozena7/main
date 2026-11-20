@@ -12,8 +12,9 @@ motion presents the finished marks without animation.
 The speed guard starts in a small React-independent entry before the portfolio
 renderer is downloaded. Fluid input and chapter tracking bind during the first
 layout commit, without waiting for images or fonts. A sharp downward wheel or
-swipe is immediately resisted with upward movement and a "Slow Down" cue; slowing
-down lets browsing continue. For forward movement that passes a whole content
+swipe is immediately resisted with upward movement and the original top-of-page
+"Slow Down" cue with its rotating messages and animations. Slowing down lets
+browsing continue. For forward movement that passes a whole content
 section quickly without meaningful on-screen exposure, the page can still return
 to the end of the last section that was skipped, once per section per visit.
 Links, keyboard navigation, dialogs and form controls remain exempt.
